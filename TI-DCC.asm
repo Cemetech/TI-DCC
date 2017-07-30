@@ -50,7 +50,7 @@ SetUpInterrupt:
 	out	(4Ch), a
 	ld	a, 2
 	out	(54h), a
-    
+	
 	; Custom Interrupts
 	ld	hl, IvtLocation*256
 	ld	de, IvtLocation*256+1
@@ -66,37 +66,37 @@ SetUpInterrupt:
 	ld	bc, 3
 	ldir
 
-        
-    ld a,82h ; set to CPU_FREQ/4
-    out (30h),a
-    ld a,3 ; Set timer interrupt, + Loop
-    out (31h),a
-    ld a,218  ; Set loop Period
-    out (32h),a
+		
+	ld a,82h ; set to CPU_FREQ/4
+	out (30h),a
+	ld a,3 ; Set timer interrupt, + Loop
+	out (31h),a
+	ld a,218  ; Set loop Period
+	out (32h),a
 
 	im 2
-    
-    ;Testing initializers
-    ex af,af'
-    ld a,2
-    ex af,af'
-    ei
-    
+	
+	;Testing initializers
+	ex af,af'
+	ld a,2
+	ex af,af'
+	ei
+	
 	jp $
-    
+	
  
 InterruptServiceRoutine:
-    exx
-        ex af,af'    ;Save Regs
-        cpl          ;Alternate bits for wave
-        out (0),a    ;Send to port
-        push af    
-            ld a,3   ;Reset interrupt
-            out (31h),a ; Move this to beginning 
-        pop af
-        ex af,af'
-    exx
-    ei
-    ret
+	exx
+		ex af,af'    ;Save Regs
+		cpl          ;Alternate bits for wave
+		out (0),a    ;Send to port
+		push af    
+			ld a,3   ;Reset interrupt
+			out (31h),a ; Move this to beginning 
+		pop af
+		ex af,af'
+	exx
+	ei
+	ret
 .endrelocate
 .end
