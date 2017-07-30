@@ -66,37 +66,36 @@ SetUpInterrupt:
 	ld	bc, 3
 	ldir
 
-		
-	ld a,82h ; set to CPU_FREQ/4
-	out (30h),a
-	ld a,3 ; Set timer interrupt, + Loop
-	out (31h),a
-	ld a,218  ; Set loop Period
-	out (32h),a
+	ld a,82h				; Set to CPU_FREQ/4 to Port $30
+	out (pCrstlTmr1Freq),a
+	ld a,%00000011			; Set timer interrupt + loop to Port $31
+	out (pCrstlTmr1Cfg),a
+	ld a,218				; Set loop period for ~58us at 15MHz to Port $32
+	out (pCrstlTmr1Count),a
 
 	im 2
-	
+
 	;Testing initializers
 	ex af,af'
 	ld a,2
 	ex af,af'
 	ei
-	
+
 	jp $
-	
- 
+
 InterruptServiceRoutine:
 	exx
-		ex af,af'    ;Save Regs
-		cpl          ;Alternate bits for wave
-		out (0),a    ;Send to port
-		push af    
-			ld a,3   ;Reset interrupt
-			out (31h),a ; Move this to beginning 
+	ex af,af'    ;Save Regs
+	cpl          ;Alternate bits for wave
+	out (0),a    ;Send to port
+	push af    
+		ld a,%00000011   ;Reset interrupt
+		out (pCrstlTmr1Cfg),a ; Move this to beginning (port $31)
 		pop af
-		ex af,af'
+	ex af,af'
 	exx
 	ei
 	ret
+
 .endrelocate
 .end
