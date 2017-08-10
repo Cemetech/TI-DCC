@@ -86,18 +86,48 @@ SetUpInterrupt:
     
 
 InterruptServiceRoutine:
-    exx
-    ex af,af'               ;Save Regs
-    cpl                     ;Alternate bits for wave
-    out (0),a               ;Send to port
-    push af    
-        ld a,%00000011      ;Reset interrupt
-        out (pCrstlTmr1Cfg),a ; Move this to beginning (port $31)
-        pop af
+
+    ex af,af'               
+        exx
+            ld bc,(%00000011 << 8)+pCrstlTmr1Cfg ;
+            out (c),b                ;17cc Faster then PushPop
+            or a                     ;If != Zero
+            jp nz,doWait
+            ld a,(dccState.flags)
+            ;ld ix,(dccState.msgPTR)
+            out (0),a                ;No other flags then bit. 
+            bit 1,a                  ;Check period
+            ld a,(dccState.curDat)   ;Load A with current data being processed
+            jp nz,doPeriodB          ;If Z We are period A   
+doPeriodA:
+            bit 0,a                  ;Check current data Bit
+            jp nz,+                  ;If Z set wait
+            ld a,1  
+            ld (dccState.waitCTR),a  ;Load Wait
++:  
+            ld a,periodB             ;Set period and Output Link Mirror Bit
+            ld (dccState.flags),a    ;to %00000010
+            jp doIntEnd
+doPeriodB:
+            bit 0,a                  ;Check current data bit
+            jp nz,+                  ;If Z set Wait
+            ld a,1                   ;
+            ld (dccState.waitCTR),a  ;Load Wait
++:  
+            ld a,periodA             ;Set period and Output Link Mirror Bit
+            ld (dccState.flags),a    ;to 0
+            jp doIntEnd              ;Need todo B specific stuff here
+doIntEnd:
+        exx
     ex af,af'
     exx
     ei
     ret
 
+doWait:
+            dec a
+        exx
+    ex af',af
+    ret
 .endrelocate
 .end
