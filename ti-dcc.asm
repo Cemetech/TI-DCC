@@ -282,11 +282,11 @@ doWait:
 idlePacket:
 .db 43
 .db %11111111
-.db %11111110
+.db %01111111
 .db %11111111
 .db %00000000
-.db %00111111
-.db %11100000
+.db %11111110
+.db %00000011
 .align 256
 dataLLut:
 .fill 512,0         ;I know this is bad should move this to saferam. But meh
