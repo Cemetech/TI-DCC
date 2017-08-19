@@ -1,0 +1,276 @@
+.module ctrl
+.local
+_modulestart:
+;
+; This is the dashboard component to the application. This is what drives and
+; maintains the appearance of the DCC controller
+;
+
+allocMem(1,curbank)
+allocMem(1,throttlemode)   ;0: 0-14, 1: 0-28, 2:0-128
+allocMem(1,throttle)       ;signed for indic
+allocMem(1,tabflags)       ;b0=bank1 b1=bank2 [...] b4=[MODE]
+allocMem(2,curaddress)     ;0-32767 (signed 16 bit value, sign unused)
+allocMem((3*24),bankdata)  ;.dw callbackrtn /.db state
+
+;------------------------------------------------------------------------------------
+Initialize:
+	xor a
+	ld de,DefaultControllerCallback
+	ld (curbank),a
+	ld (throttle),a
+	ld (tabflags),a
+	inc a
+	ld (throttlemode),a
+	ld b,24
+	ld hl,bankdata
+-:  ld (hl),a
+	inc hl
+	ld (hl),e
+	inc hl
+	ld (hl),d
+	inc hl
+	djnz {-}
+	call _drawlabels
+	call _drawkeysprites
+	jp _drawtabs
+;-----------------------------------------------------------------------------------
+Refresh:
+	call UpdateAddress
+	ret
+
+
+
+
+
+
+
+
+
+
+
+
+;-----------------------------------------------------------------------------------
+
+
+
+_drawlabels:
+	ld a,IMGBANK
+	out (5),a
+	ld hl,48  \ ld a,4   \ ld bc,wh(address_w,address_h)   \ ld de,address_a
+	call gfx.SpriteNoClip
+	ld hl,232 \ ld a,4   \ ld bc,wh(throttle_w,throttle_h) \ ld de,throttle_a
+	call gfx.SpriteNoClip
+	
+	ld hl,200 \ ld a,17   \ ld bc,wh(uparrowoff_w,uparrowoff_h)   \ ld de,uparrowoff_a
+	call gfx.SpriteNoClip
+	ld hl,200 \ ld a,45   \ ld bc,wh(downarrowoff_w,downarrowoff_h)   \ ld de,downarrowoff_a
+	call gfx.SpriteNoClip
+	
+	ld hl,4   \ ld a,17  \ ld bc,wh(144,52) \ ld d,XLC_BLACK
+	call gfx.FillRect
+	ld hl,228 \ ld a,17  \ ld bc,wh(88,52)  \ ld d,XLC_BLACK
+	call gfx.FillRect
+	ld b,5
+	ld hl,8
+	call {+}
+	ld b,3
+	ld hl,232
++:	
+-:  push bc
+		push hl
+			xor a
+			call _draw7seg
+		pop hl
+		ld bc,28
+		add hl,bc
+	pop bc
+	djnz {-}
+	ret
+	
+_drawkeysprites:
+	ld a,IMGBANK
+	out (5),a
+	ld hl,93
+	ld c,3
+--:	ld b,3
+	ld e,85
+-:	call _drawkeyspriteface
+	ld a,e
+	add a,47
+	ld e,a
+	djnz {-}
+	ld de,46
+	add hl,de
+	dec c
+	jr nz,{--}
+	ret
+	
+	
+_drawkeyspriteface:
+	push bc
+		push de
+			push hl
+				ld a,e
+				ld bc,wh(numpadbutton_w,numpadbutton_h)
+				ld de,numpadbutton_a
+				call gfx.SpriteNoClip
+			pop hl
+		pop de
+		push de
+			push hl
+				ld bc,14
+				add hl,bc
+				ld a,-6
+				add a,e
+				ld bc,wh(13,4)
+				ld d,XLC_LIGHTGRAY
+				call gfx.FillRect
+			pop hl
+		pop de
+	pop bc
+	ret
+	
+_drawtabs:
+	ld a,TABBANK
+	out (5),a
+	ld hl,3
+	ld b,5
+	ld de,tabs_a
+-:	push bc
+		push hl
+			push de
+				ld a,219
+				ld bc,wh(tabs_w,(tabs_h/10))
+				call gfx.SpriteNoClip
+			pop hl
+			ld de,((tabs_h/5)*tabs_w)+0
+			add hl,de
+			ex de,hl
+		pop hl
+		ld bc,63
+		add hl,bc
+	pop bc
+	djnz {-}
+	ret
+
+;HL= Xpos, A=%X7654321
+;  3     
+;1   6     
+;  4      
+;2   7     
+;  5      
+_draw7seg:
+	ld bc,wh(4,16)
+	ld e,25
+	call _drawseg
+	ld bc,wh(4,16)
+	ld e,45
+	call _drawseg
+	ld de,4
+	add hl,de
+	ld bc,wh(16,5)
+	ld e,21
+	call _drawseg
+	ld bc,wh(16,5)
+	ld e,41
+	call _drawseg
+	ld bc,wh(16,5)
+	ld e,61
+	call _drawseg
+	ld de,16
+	add hl,de
+	ld bc,wh(4,16)
+	ld e,25
+	call _drawseg
+	ld bc,wh(4,16)
+	ld e,45
+_drawseg:  ;HL=X, BC=WH, E=Y
+	rrca
+	ld d,$20
+	jr nc,{+}
+	ld d,$E0
++:	push hl
+		push af
+			ld a,e
+			call gfx.FillRect
+		pop af
+	pop hl
+	ret
+
+_draw7seg3num:  ;IX=Xstart HL=num
+	res 0,(iy+asm_flag1)
+	jr {+1@}
+_draw7seg5num:  ;IX=Xstart HL=num
+	res 0,(iy+asm_flag1)
+	ld bc,-10000
+	call {+}
+	ld bc,-1000
+	call {+}
+@:	ld bc,-100
+	call {+}
+	ld bc,-10
+	call {+}
+	ld bc,-1
+	set 0,(iy+asm_flag1)
++:	ld a,-1
+-:	inc a
+	add hl,bc
+	jr c,{-}
+	sbc hl,bc
+	push hl
+		or a
+		jr nz,{+}
+		bit 0,(iy+asm_flag1)
+		jr nz,{++}  ;jump to render zero
+		xor a
+		jr {+++}    ;jump to direct display 7seg OFF
++:		set 0,(iy+asm_flag1)
+++:		ld hl,_7segnumtable
+		ld e,a
+		ld d,0
+		add hl,de
+		ld a,(hl)
++++:	push ix
+		pop hl
+		call _draw7seg
+		ld de,28
+		add ix,de
+	pop hl
+	ret
+	
+_7segnumtable:
+.db %01110111  ;0
+.db %01100000  ;1
+.db %00111110  ;2
+.db %01111100  ;3
+.db %01101001  ;4
+.db %01011101  ;5
+.db %01011111  ;6
+.db %01100100  ;7
+.db %01111111  ;8
+.db %01111101  ;9
+	
+	
+	
+	
+	
+	
+	
+UpdateAddress:
+	ld ix,8
+	ld hl,(curaddress)
+	jp _draw7seg5num
+	
+UpdateThrottle:
+
+	
+	
+DefaultControllerCallback:
+	ret
+
+
+
+.echoln "MODULE CTRL SIZE : ",$-_modulestart
+.endlocal
+.endmodule

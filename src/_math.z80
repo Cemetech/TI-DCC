@@ -1,0 +1,28 @@
+.module math
+.local
+_modulestart:
+
+
+
+;in:   E=multiplier H=multiplicand
+;out:  HL=product
+;dstr: DE F
+multEandH:
+	push bc
+		ld L,0
+		ld d,0
+		sla h
+		jr nc,$+3
+		ld L,e
+		ld b,7
+_multEandHLoop:
+		add hl,hl
+		jr nc,$+3
+		add hl,de
+		djnz _multEandHLoop
+	pop bc
+	ret
+
+.echoln "MODULE math SIZE : ",$-_modulestart
+.endlocal
+.endmodule
