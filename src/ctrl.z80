@@ -6,12 +6,20 @@ _modulestart:
 ; maintains the appearance of the DCC controller
 ;
 
+C_SWITCHSTATE  .equ 0
+C_NOTMOMENTARY .equ 1
+
+C_FLAGS    .equ 0
+C_CALLBACK .equ 1
+
+allocMem(2,temp)
 allocMem(1,curbank)
 allocMem(1,throttlemode)   ;0: 0-14, 1: 0-28, 2:0-128
-allocMem(1,throttle)       ;signed for indic
+allocMem(1,throttle)       ;unsigned.
+allocMem(1,direction)      ;0=forward 1=backward -1:emergency stop triggered
 allocMem(1,tabflags)       ;b0=bank1 b1=bank2 [...] b4=[MODE]
 allocMem(2,curaddress)     ;0-32767 (signed 16 bit value, sign unused)
-allocMem((3*24),bankdata)  ;.dw callbackrtn /.db state
+allocMem((3*24),bankdata)  ;.db state / .dw callbackrtn /
 
 ;------------------------------------------------------------------------------------
 Initialize:
@@ -24,7 +32,7 @@ Initialize:
 	ld (throttlemode),a
 	ld b,24
 	ld hl,bankdata
--:  ld (hl),a
+-:  ld (hl),0
 	inc hl
 	ld (hl),e
 	inc hl
@@ -33,10 +41,17 @@ Initialize:
 	djnz {-}
 	call _drawlabels
 	call _drawkeysprites
+	ld c,0
 	jp _drawtabs
 ;-----------------------------------------------------------------------------------
 Refresh:
 	call UpdateAddress
+	call UpdateThrottle
+	call UpdateDirection
+	call UpdateKeyLabels
+	call UpdateSwitchState
+	call UpdateSwitchLock
+	call UpdateTabs
 	ret
 
 
@@ -62,10 +77,10 @@ _drawlabels:
 	ld hl,232 \ ld a,4   \ ld bc,wh(throttle_w,throttle_h) \ ld de,throttle_a
 	call gfx.SpriteNoClip
 	
-	ld hl,200 \ ld a,17   \ ld bc,wh(uparrowoff_w,uparrowoff_h)   \ ld de,uparrowoff_a
-	call gfx.SpriteNoClip
-	ld hl,200 \ ld a,45   \ ld bc,wh(downarrowoff_w,downarrowoff_h)   \ ld de,downarrowoff_a
-	call gfx.SpriteNoClip
+	ld de,uparrowoff_a
+	call _drawarrowuploc
+	ld de,downarrowoff_a
+	call _drawarrowdownloc
 	
 	ld hl,4   \ ld a,17  \ ld bc,wh(144,52) \ ld d,XLC_BLACK
 	call gfx.FillRect
@@ -131,17 +146,23 @@ _drawkeyspriteface:
 	pop bc
 	ret
 	
-_drawtabs:
+_drawtabs:  ;C = bitfield for active tabs
 	ld a,TABBANK
 	out (5),a
 	ld hl,3
 	ld b,5
 	ld de,tabs_a
--:	push bc
+-:	rrc c
+	push bc
 		push hl
 			push de
 				ld a,219
-				ld bc,wh(tabs_w,(tabs_h/10))
+				jr nc,{+}
+				ex de,hl
+				ld bc,tabs_w*(tabs_h/10)
+				add hl,bc
+				ex de,hl
++:				ld bc,wh(tabs_w,(tabs_h/10))
 				call gfx.SpriteNoClip
 			pop hl
 			ld de,((tabs_h/5)*tabs_w)+0
@@ -263,7 +284,187 @@ UpdateAddress:
 	jp _draw7seg5num
 	
 UpdateThrottle:
+	ld ix,232
+	ld hl,(throttle)
+	ld h,0
+	jp _draw7seg3num
 
+UpdateDirection:
+	ld a,IMGBANK
+	out (5),a
+	ld a,(direction)
+	;0=fwd
+	ld de,uparrowoff_a
+	rrca
+	jr c,{+}
+	ld de,uparrowon_a
++:	push af
+		call _drawarrowuploc
+	pop af
+	ld de,downarrowoff_a
+	cp $80  ;was 1 now $80 due to rrca. If exactly this number, then turn on arrow
+	jr nz,{+}
+	ld de,downarrowon_a
++:	jr _drawarrowdownloc
+;Note: down arrow size should be same as up arrow.
+;      These routines assume IMGBANK has already been selected
+_drawarrowdownloc: ;DE = arrow sprite address. 
+	ld a,45
+	jr {+}
+_drawarrowuploc:   ;DE = arrow sprite address
+	ld a,17  
++:	ld bc,wh(uparrowoff_w,uparrowoff_h)
+	ld hl,200
+	jp gfx.SpriteNoClip
+	
+UpdateKeyLabels:
+	ld a,IMGBANK
+	out (5),a
+	ld a,(curbank)
+	ld e,a
+	ld h,(fnums_h/(24/8))+0
+	call math.multEandH
+	ld de,fnums_a
+	add hl,de
+	push hl
+	pop ix
+	ld de,(8*256)+184
+	ld c,3
+--:	ld b,3
+	ld hl,102
+-:	call _drawkeylabels  ;internal: add hl,46
+	dec d
+	ret z
+	djnz {-}
+	ld a,e
+	sub 47
+	ld e,a
+	dec c
+	jr nz,{--}
+	ret
+_drawkeylabels:
+	push bc
+		push de
+			push hl
+				ld a,e
+				ld bc,wh(fnums_w,(fnums_h/24))
+				push ix
+				pop de
+				call gfx.SpriteNoClip
+				ld de,fnums_w*(fnums_h/24)
+				add ix,de
+			pop hl
+			ld de,46
+			add hl,de
+		pop de
+	pop bc
+	ret
+	
+UpdateSwitchState:
+	call _getbankaddress
+	ld de,(8*256)+173
+	ld c,3
+--:	ld b,3
+	ld hl,107
+-:	call _drawswitchleds  ;internal: add hl,46
+	dec d
+	ret z
+	djnz {-}
+	ld a,e
+	sub 47
+	ld e,a
+	dec c
+	jr nz,{--}
+	ret
+_drawswitchleds:
+	push bc
+		push de
+			push hl
+				ld a,e
+				ld bc,wh(13,4)
+				ld d,XLC_RED
+				bit C_SWITCHSTATE,(ix+C_FLAGS)
+				jr z,{+}
+				ld d,XLC_GREEN
++:				call gfx.FillRect
+				ld de,bankdata_size/24
+				add ix,de
+			pop hl
+			ld de,46
+			add hl,de
+		pop de
+	pop bc
+	ret
+	
+UpdateSwitchLock:
+	call _getbankaddress
+	ld de,(8*256)+198
+	ld c,3
+--:	ld b,3
+	ld hl,109
+-:	call _drawlockstatus  ;internal: add hl,46
+	dec d
+	ret z
+	djnz {-}
+	ld a,e
+	sub 47
+	ld e,a
+	dec c
+	jr nz,{--}
+	ret
+_drawlockstatus:
+	push bc
+		push de
+			push hl
+				ld a,e
+				ld bc,wh(lock_w,lock_h)
+				bit C_NOTMOMENTARY,(ix+C_FLAGS)
+				jr nz,{+}
+				ld d,XLC_WHITE
+				call gfx.FillRect
+				jr {++}
++:				ld de,lock_a
+				call gfx.SpriteNoClip
+++:				ld de,bankdata_size/24
+				add ix,de
+			pop hl
+			ld de,46
+			add hl,de
+		pop de
+	pop bc
+	ret
+	
+_getbankaddress:
+	ld a,(curbank)
+	ld e,a
+	ld h,(bankdata_size/(24/8))+0
+	call math.multEandH
+	ld de,bankdata
+	add hl,de
+	push hl
+	pop ix
+	ret
+	
+UpdateTabs:
+	ld a,(curbank)
+	inc a
+	ld b,a
+	ld a,$80
+-	rlca
+	djnz {-}
+	ld b,a
+	ld a,(tabflags)
+	xor b
+	and %11111000
+	xor b
+	ld (tabflags),a
+	ld c,a
+	jp _drawtabs
+	
+	
+	
+	
+	
 	
 	
 DefaultControllerCallback:

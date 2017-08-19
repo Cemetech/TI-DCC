@@ -50,8 +50,16 @@ startApp:
 	out (5),a
 	;start the fancy work
 	call ctrl.Initialize
-	ld hl,12345
+	ld hl,45678
 	ld (ctrl.curaddress),hl
+	ld a,123
+	ld (ctrl.throttle),a
+	ld a,1
+	ld (ctrl.direction),a
+	ld a,$FF
+	ld (ctrl.bankdata),a
+	ld a,%00001000
+	ld (ctrl.tabflags),a
 	call ctrl.Refresh
 	
 

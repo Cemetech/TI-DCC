@@ -34,3 +34,10 @@ TABBANK  .equ 5
 .define XLC_BLACK $00
 .define XLC_DARKGRAY $4A
 .define XLC_LIGHTGRAY $94
+.define XLC_RED $E0
+.define XLC_GREEN $07
+.define XLC_BLUE $18
+.define XLC_DARKRED $20
+.define XLC_DARKBLUE $08
+.define XLC_DARKGREEN $01
+.define XLC_WHITE $FF
