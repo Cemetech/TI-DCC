@@ -60,21 +60,19 @@ startApp:
 	ld (ctrl.bankdata),a
 	ld a,%00001000
 	ld (ctrl.tabflags),a
+	ld a,2
+	ld (ctrl.curbank),a
 	call ctrl.Refresh
 	
 
-	ld bc,0
--:	push af
-	pop af
-	push af \ pop af \ push af \ pop af \ push af \ pop af \ push af \ pop af
-	push af \ pop af \ push af \ pop af \ push af \ pop af \ push af \ pop af
-	push af \ pop af \ push af \ pop af \ push af \ pop af \ push af \ pop af
-	push af \ pop af \ push af \ pop af \ push af \ pop af \ push af \ pop af
-	push af \ pop af \ push af \ pop af \ push af \ pop af \ push af \ pop af
-	push af \ pop af \ push af \ pop af \ push af \ pop af \ push af \ pop af
-	dec bc
-	ld a,c
-	or b
+	ld hl,2000
+-:	ld (ctrl.curaddress),hl
+	push hl
+		call ctrl.UpdateAddress
+	pop hl
+	dec hl
+	ld a,l
+	or h
 	jr nz,{-}
 
 

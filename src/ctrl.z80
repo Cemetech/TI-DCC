@@ -19,7 +19,7 @@ allocMem(1,throttle)       ;unsigned.
 allocMem(1,direction)      ;0=forward 1=backward -1:emergency stop triggered
 allocMem(1,tabflags)       ;b0=bank1 b1=bank2 [...] b4=[MODE]
 allocMem(2,curaddress)     ;0-32767 (signed 16 bit value, sign unused)
-allocMem((3*24),bankdata)  ;.db state / .dw callbackrtn /
+allocMem((3*27),bankdata)  ;.db state / .dw callbackrtn /
 
 ;------------------------------------------------------------------------------------
 Initialize:
@@ -30,7 +30,7 @@ Initialize:
 	ld (tabflags),a
 	inc a
 	ld (throttlemode),a
-	ld b,24
+	ld b,27
 	ld hl,bankdata
 -:  ld (hl),0
 	inc hl
@@ -322,19 +322,20 @@ UpdateKeyLabels:
 	out (5),a
 	ld a,(curbank)
 	ld e,a
-	ld h,(fnums_h/(24/8))+0
+	ld h,fnums_w
+	call math.multEandH
+	ld e,L
+	ld h,(fnums_h/(27/9))+0
 	call math.multEandH
 	ld de,fnums_a
 	add hl,de
 	push hl
 	pop ix
-	ld de,(8*256)+184
+	ld e,184
 	ld c,3
 --:	ld b,3
 	ld hl,102
 -:	call _drawkeylabels  ;internal: add hl,46
-	dec d
-	ret z
 	djnz {-}
 	ld a,e
 	sub 47
@@ -347,11 +348,11 @@ _drawkeylabels:
 		push de
 			push hl
 				ld a,e
-				ld bc,wh(fnums_w,(fnums_h/24))
+				ld bc,wh(fnums_w,(fnums_h/27))
 				push ix
 				pop de
 				call gfx.SpriteNoClip
-				ld de,fnums_w*(fnums_h/24)
+				ld de,fnums_w*(fnums_h/27)
 				add ix,de
 			pop hl
 			ld de,46
@@ -362,13 +363,11 @@ _drawkeylabels:
 	
 UpdateSwitchState:
 	call _getbankaddress
-	ld de,(8*256)+173
+	ld e,173
 	ld c,3
 --:	ld b,3
 	ld hl,107
 -:	call _drawswitchleds  ;internal: add hl,46
-	dec d
-	ret z
 	djnz {-}
 	ld a,e
 	sub 47
@@ -387,7 +386,7 @@ _drawswitchleds:
 				jr z,{+}
 				ld d,XLC_GREEN
 +:				call gfx.FillRect
-				ld de,bankdata_size/24
+				ld de,bankdata_size/27
 				add ix,de
 			pop hl
 			ld de,46
@@ -398,13 +397,11 @@ _drawswitchleds:
 	
 UpdateSwitchLock:
 	call _getbankaddress
-	ld de,(8*256)+198
+	ld e,198
 	ld c,3
 --:	ld b,3
 	ld hl,109
 -:	call _drawlockstatus  ;internal: add hl,46
-	dec d
-	ret z
 	djnz {-}
 	ld a,e
 	sub 47
@@ -425,7 +422,7 @@ _drawlockstatus:
 				jr {++}
 +:				ld de,lock_a
 				call gfx.SpriteNoClip
-++:				ld de,bankdata_size/24
+++:				ld de,bankdata_size/27
 				add ix,de
 			pop hl
 			ld de,46
@@ -437,7 +434,7 @@ _drawlockstatus:
 _getbankaddress:
 	ld a,(curbank)
 	ld e,a
-	ld h,(bankdata_size/(24/8))+0
+	ld h,(bankdata_size/(27/9))+0
 	call math.multEandH
 	ld de,bankdata
 	add hl,de
