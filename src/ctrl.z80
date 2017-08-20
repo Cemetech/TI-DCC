@@ -70,7 +70,7 @@ Refresh:
 	ret
 ;------------------------------------------------------------------------------------
 EventLoop:
-    call kbd.gsGetCSC
+	call kbd.gsGetCSC
 	ld hl,(curbank)
 	cp skYequ   ;F1 - BANK 1
 	jr nz,{+}
@@ -83,7 +83,7 @@ _evloop_banks_common:
 	call UpdateSwitchState
 	call UpdateSwitchLock
 	call UpdateTabs
-	jr EventLoop
+	jr _evloop_keywait_and_jumpback
 +:	cp skWindow  ;F2 - BANK 2
 	jr nz,{+}
 	ld a,1
@@ -99,7 +99,7 @@ _evloop_banks_common:
 	xor %00010000
 	ld (tabflags),a
 	call UpdateTabs
-	jr EventLoop
+	jp _evloop_keywait_and_jumpback
 +:	; -- Handle numkey events below
 	ld hl,_evloop_numpad_table
 	ld bc,9
@@ -120,7 +120,7 @@ _evloop_banks_common:
 	res C_SWITCHSTATE,a
 	ld (hl),a
 	call UpdateSwitchLock
-	jp EventLoop
+	jp _evloop_keywait_and_jumpback
 _evloop_togglefunction:
 	call _evloop_toggleswitch
 	call _getcurfuncbank
@@ -135,7 +135,7 @@ _evloop_togglefunction:
 		pop ix
 	pop bc
 	bit C_NOTMOMENTARY,(ix+C_FLAGS)
-	jp nz,EventLoop
+	jp nz,_evloop_keywait_and_jumpback
 	call kbd.keyWait
 	call _evloop_toggleswitch
 	call _evloop_call_numpad_event
@@ -143,6 +143,11 @@ _evloop_togglefunction:
 	jp EventLoop
 ++:	cp skClear \ ret z  ;REMOVE WHEN DONE TO MAKE APP ENDLESS
 	
+	jp EventLoop
+	
+	
+_evloop_keywait_and_jumpback:
+	call kbd.keyWait
 	jp EventLoop
 	
 _evloop_toggleswitch:
