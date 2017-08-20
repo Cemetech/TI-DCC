@@ -20,6 +20,7 @@
 .db	80h, 70h
 
 startApp:
+    di
 	;Make sure fast mode is set
 	ld a,1
 	out ($20),a

@@ -8,14 +8,13 @@ keyWait:
 	inc a
 	jr nz,keyWait
 	ret
-	
+
 getAnyKey:
 	xor a
 	out (1),a
 	call _kwdelay
 	in a,(1)
 	push af
-		call _kwdelay
 		ld a,$FF
 		out (1),a
 	pop af
@@ -24,12 +23,73 @@ getAnyKey:
 
 
 _kwdelay:
-	push af
-	pop af
-	push af
-	pop af
+    ex (sp),hl
+    ex (sp),hl
+    ex (sp),hl
+    ex (sp),hl
+    ret
+    
+;Getcsc replacement by James Montelongo 
+; Outputs:
+;  - A: Keycode
+; Destroys:
+;  - AF
+allocMem(1,gs_keymem)
+gsGetK:
+gsGetCSC:
+	push hl
+		push de
+			push bc
+			ld e,$fe		;frist group
+			ld c,$01		;key port
+			ld l,0		;l holds key pressed
+cscloop:
+			ld a,$ff		;For some reason emulator really wants it in the loop
+			out (1),a		;reset keyport
+			ld h,$fe
+			out (c),e		;set keygroup
+            call _kwdelay
+			ld b,8		;loop, Delay needed when work with key driver
+			in a,(c)		;read key
+cscbit:
+			inc l			;inc to get key pressed
+			rra 			; if key pressed done
+			jp nc,donecsc
+			rlc h
+			djnz cscbit 	;loop 8
+			rlc e			;next key group
+			jp m,cscloop	;if bit 7 set loop
+			ld l,0		;if no key pressed 0
+donecsc:
+			ld a,$ff
+			out (1),a
+			ld a,e
+			cpl
+			out (1),a
+            call _kwdelay
+			in a,(1)
+			inc a
+			jp z,nootherkeypressed
+			ld l,0
+nootherkeypressed:
+			ld a,$ff
+			out (1),a
+			nop
+			ld a,e
+			out (1),a
+            call _kwdelay
+			in a,(1)
+			cp h
+			jr z,only1key
+			ld l,0
+only1key:
+			ld a,l		;
+			or a
+			ld (gs_keymem),a
+			pop bc
+		pop de
+	pop hl
 	ret
- 
 .echoln "MODULE kbd  SIZE : ",$-_modulestart
 .endlocal
 .endmodule

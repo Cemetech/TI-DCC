@@ -70,8 +70,7 @@ Refresh:
 	ret
 ;------------------------------------------------------------------------------------
 EventLoop:
-	bcall(_kbdScan)
-	bcall(_getCSC)
+    call kbd.gsGetCSC
 	ld hl,(curbank)
 	cp skYequ   ;F1 - BANK 1
 	jr nz,{+}
