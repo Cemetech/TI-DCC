@@ -107,6 +107,9 @@ _setrectregion: ;HL=X, A=Y, C=width-1, B=height-1
 	inc a
 	ld d,b
 	add hl,de
+	call _setlcdreg
+	ld a,$20
+	ld hl,0
 	jp _setlcdreg    ;Ymax
 ;------------------
 

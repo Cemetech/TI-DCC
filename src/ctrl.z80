@@ -6,6 +6,18 @@ _modulestart:
 ; maintains the appearance of the DCC controller
 ;
 
+;Event documentation
+;
+;e_numpad - Called whenever a keypad push or release event occurs.
+;           On entry: A  = Nonzero if pushed, 0 if released
+;                     C  = function number (0-26)
+;                     IX = current address of bank status bytes
+;
+;
+;
+
+
+
 C_SWITCHSTATE  .equ 0
 C_NOTMOMENTARY .equ 1
 
@@ -81,49 +93,68 @@ _evloop_banks_common:
 	jr nz,{+}
 	ld a,2
 	jr _evloop_banks_common
-+:	cp skGraph
++:	; -- Handle F5 events below
+	cp skGraph
 	jr nz,{+}
 	ld a,(tabflags)
 	xor %00010000
 	ld (tabflags),a
 	call UpdateTabs
 	jr EventLoop
-+:	ld hl,_evloop_numpad_table
++:	; -- Handle numkey events below
+	ld hl,_evloop_numpad_table
 	ld bc,9
 	cpir
-	jr nz,{+}
+	jr nz,{++}
+	call _getbankaddress
+	ld a,bankdata_size/27
+-	add ix,bc
+	add hl,bc
+	dec a
+	jr nz,{-}
 	ld a,(tabflags)
 	bit 4,a
 	jr z,_evloop_togglefunction
 ;	res 4,a \ ld (tabflags),a
-	ld a,(curbank)
-	ld e,a
-	ld h,(bankdata_size/3)+0
-	call math.multEandH
-	ld de,bankdata
-	add hl,de
-	add hl,bc
 	ld a,(hl)
 	xor 1 << C_NOTMOMENTARY
+	res C_SWITCHSTATE,a
 	ld (hl),a
 	call UpdateSwitchLock
 	jp EventLoop
 _evloop_togglefunction:
+	call _evloop_toggleswitch
+	call _getcurfuncbank
+	add hl,bc
+	ld c,L
+	ld a,(ix+C_FLAGS)
+	and 1 << C_SWITCHSTATE
+	push bc
+		push ix
+			call _evloop_call_numpad_event
+			call UpdateSwitchState
+		pop ix
+	pop bc
+	bit C_NOTMOMENTARY,(ix+C_FLAGS)
+	jp nz,EventLoop
+	call kbd.keyWait
+	call _evloop_toggleswitch
+	call _evloop_call_numpad_event
+	call UpdateSwitchState
 	jp EventLoop
-+:	cp skClear \ ret z  ;REMOVE WHEN DONE TO MAKE APP ENDLESS
+++:	cp skClear \ ret z  ;REMOVE WHEN DONE TO MAKE APP ENDLESS
 	
 	jp EventLoop
 	
-
-
-
-_evloop_waitkeyrelease:
-	bcall(_kbdscan)
-	ld a,(kbdScanCode)
-	or a
-	jr nz,_evloop_waitkeyrelease
+_evloop_toggleswitch:
+	ld a,(ix+C_FLAGS)
+	xor 1 << C_SWITCHSTATE
+	ld (ix+C_FLAGS),a
 	ret
-
+_evloop_call_numpad_event:
+	ld hl,(e_numpad)
+	jp (hl)
+	
 _evloop_numpad_table:
 .db sk9,sk8,sk7,sk6,sk5,sk4,sk3,sk2,sk1,$FF,$FF,$FF
 	
@@ -507,6 +538,11 @@ _getbankaddress:
 	push hl
 	pop ix
 	ret
+_getcurfuncbank:
+	ld a,(curbank)
+	ld e,a
+	ld h,9
+	jp math.multEandH
 	
 UpdateTabs:
 	ld a,(curbank)

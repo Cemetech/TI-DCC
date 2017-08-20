@@ -79,6 +79,7 @@ exitApp:
 .include "src/_dpk.z80"
 .include "src/_gfx.z80"
 .include "src/_math.z80"
+.include "src/_kbd.z80"
 ;--------------------------------
 -
 .include "obj/sprites.z80"
