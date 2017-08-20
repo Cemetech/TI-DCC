@@ -12,8 +12,9 @@ _modulestart:
 ;           On entry: A  = Nonzero if pushed, 0 if released
 ;                     C  = function number (0-26)
 ;                     IX = current address of bank status bytes
-;
-;
+;                          For each byte (FL-F26), state for each function:
+;                             b0 : 1 if switch on, 0 if switch off
+;                             b1 : 1 if switch lock enabled, 0 if momentary
 ;
 
 
