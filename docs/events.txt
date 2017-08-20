@@ -1,0 +1,66 @@
+DCC Controller Emulator - TI-DCC - Event System Documentation
+-----------------------------------------------------------------------------
+_______________________________________
+ ..:: About ::..
+
+This is documentation of the event system that allows linkage between the
+frontend and backend of the DCC Controller. The linkage is achieved though
+callbacks when an event occurs during the keyread wait loop.
+
+_______________________________________
+ ..:: Documentation ::..
+
+ctrl.e_numpad - Triggers whenever any button on the numpad [1-9]
+                is either pressed or released.
+				
+				Registers on entry:
+				A  = Nonzero if pushed, 0 if released
+				C  = Function number (0-26)
+				IX = Current address of bank status bytes
+				Note: For each byte (FL-F26), state for each function:
+					b0 : 1 if switch on, 0 if switch off
+					b1 : 1 if switch lock enabled, 0 if momentary
+
+ctrl.e_updown - Triggers whenever the up or down keys have been pushed.
+				This is the controls for setting forward or reverse.
+				
+				Register on entry:
+				A = ctrl.DIR_FORWARD if the train is now moving forward
+				    ctrl.DIR_REVERSE if the train is now in reverse
+					
+ctrl.e_leftright -	Triggers whenever the left or right keys have been pushed.
+					This event repeatedly triggers for each time the throttle
+					value changes and can happen as long as the user holds down
+					the left or right keys.
+					
+					Registers on entry:
+					E = current throttle value
+					D = Throttle mode
+						0 = Mode with range 0-14
+						1 = Mode with range 0-28
+						2 = Mode with range 0-128
+_______________________________________
+ ..:: How to Use ::..
+ 
+To subscribe to an event, store the address of your routine to the mentioned
+variables above. For example, to subscribe to accel/decel, do the following:
+
+	ld hl,MyAccelDecelEventRoutine
+	ld (ctrl.e_leftright),hl
+ 
+_______________________________________
+ ..:: Troubleshooting ::..
+ 
+Things to check for:
+1 . Make sure the stack level is the same from the start of your callback
+    routine as it is when it exits
+2 . Make sure you exit the callback routine with a RET or equivalent.
+3 . Make sure you subscribe to your events AFTER you call ctrl.Initialize
+	since that erases all subscriptions but BEFORE you call ctrl.EventLoop
+	since that routine doesn't exit until you quit the program.
+ 
+ 
+ 
+
+
+

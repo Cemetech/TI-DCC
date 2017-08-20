@@ -51,13 +51,23 @@ startApp:
 	out (5),a
 	;start the fancy work
 	call ctrl.Initialize
-	ld hl,45678
-	ld (ctrl.curaddress),hl
-	ld a,1
-	ld (ctrl.direction),a
-	call ctrl.Refresh
 	
-	call ctrl.EventLoop
+	; ********** EXAMPLE SET UP CODE ***********
+	
+	ld hl,doNothing
+	ld (e_numpad),hl   ;numpad key press down and up events
+	
+	ld hl,doNothing
+	ld (e_updown),hl   ;updown event for forward/reverse
+	
+	ld hl,doNothing
+	ld (e_leftright),hl ;leftright event for accel/decel
+	
+	
+	; ******** END EXAMPLE SET UP CODE *********
+	
+	call ctrl.Refresh    ;
+	call ctrl.EventLoop  ; change these two later to init to setup
 
 exitApp:
 	;break down graphics
@@ -71,6 +81,8 @@ exitApp:
 	bjump(_JForceCmdNoChar)
 
 .echoln "MODULE **** SIZE : ",$-$4000
+
+doNothing: ret
 
 ;--------------------------------
 .include "src/ctrl.z80"   ;DCC controller frontend
