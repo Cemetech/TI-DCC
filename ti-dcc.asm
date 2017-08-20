@@ -42,11 +42,17 @@ periodB .equ 1 << 1
     .var 1, data4     ;
     .var 1, data5     ;
     .var 1, data6     ; error == address ^ data
+    .var 1, data7     ; error == address ^ data
+    .var 1, data8     ; error == address ^ data
+    .var 1, data9     ; error == address ^ data
 .endstruct
 .var dccStateStruct, dccstate
 .var dccPacketStruct, dccIdlePacket
 .var dccPacketStruct, dccUserPacket
 .endlocal
+.var 10,packetGenScratch
+.var 1,maxbits
+.var 1,func
 .list
 
     .org UserMem
@@ -123,6 +129,8 @@ SetUpInterrupt:
     
     ld de,dataLLUT
     call genLUT             ;set up lut for interrupts
+    ld de,dataLLUT2
+    call genLUT2             ;set up lut for interrupts
     
     ex af,af'
     xor a
@@ -137,28 +145,204 @@ SetUpInterrupt:
     ld (dccState.repeat),a
     ld (dccState.curDat),a
     ei
+loop:
+    bcall(_Kbdscan)
+    bcall(_getcsc)
+    cp skDown
+    jp z,TrainReverse
+    cp skUp
+    jp z,trainForward
+    cp sk2nd
+    jp z,TrainStop
+    cp skLeft
+    jp z,setLights
+    cp skRight
+    jp z,setLightsOff
+    jp Loop
+TrainStop:
+    ld b,%01010001
+    ld a,3
+    ld c,255
+    call send2byte
+    jp loop
+TrainReverse:
+    ld b,%01111001
+    ld a,3
+    ld c,255
+    call send2byte
+    jp loop
+TrainForward:
+    ld b,%01001001
+    ld a,3
+    ld c,255
+    call send2byte
+    jp loop
+setLights:
+    ld b,%10100010
+    ld a,3
+    ld c,1
+    call send2byte
+    jp loop
+setLightsOff:
+    ld b,%10100000
+    ld a,3
+    ld c,1
+    call send2byte
+    jp loop
 
+send2byte:  ;in b,%01DCSSSS a,address c,repeat
+    di
+    ld (packetGenScratch+3),a      ; Save Adress
+    xor b
+    ld (packetGenScratch+5),a      ;Save error
+    ld a,b
+    ld (packetGenScratch+4),a      ;save speed command
+    ld a,255
+    ld (packetGenScratch+1),a
+    ld (packetGenScratch+2),a      ;Save Preamble
+       
+    ld a,c
+    ld (dccState.repeat),a
+    ld a,45
+    ld (packetGenScratch),a     
     
-    jp $
-    
-genLUT:  ;DE=starting address. Must be 256-byte aligned.
+    ;ppabe
+    ld hl,packetGenScratch+1
+    ld e,8*5
+    ld c,FFh
+    ld a,48
+    call insertBit
+    ld hl,packetGenScratch+1
+    ld e,8*4
+    ld c,0
+    ld a,48
+    call insertBit
+    ld hl,packetGenScratch+1
+    ld e,8*3
+    ld c,0
+    ld a,48
+    call insertBit
+    ld hl,packetGenScratch+1
+    ld e,8*2
+    ld c,0
+    ld a,48
+    call insertBit
+    ld de,dccUserPacket
+    ld hl,packetGenScratch
+    ld bc,10
+    ldir
+    xor a
+    ld (dccState.flags),a
+    ld (dccState.size),a
+    ld hl,dccUserPacket
+    ld (dccState.msgPTR),hl
+    ld a,255
+    ld (dccState.curDat),a
+    ei
+    ret
+
+genLUT:  ;in: DE=starting address. Must be 256-byte aligned.
 	ld a,e
 	rrca \ rrca \ rrca
 	and 7
 	ld (de),a
 	ld a,e
 	inc d
+	cpl
 	and 7
 	ld b,a
+	ld c,0
 	ld a,1
-	jr z,$+5
+	jr z,{+}
+-:	scf \ rl c
 	rlca
-	djnz $-1
+	djnz {-}
++:	ld (de),a
+	inc d
+	ld a,c
 	ld (de),a
+	dec d
 	dec d
 	inc e
 	jr nz,genLUT
 	ret
+    
+genLUT2:  ;in: DE=starting address. Must be 256-byte aligned.
+	ld a,e
+	rrca \ rrca \ rrca
+	and 7
+	ld (de),a
+	ld a,e
+	inc d
+	cpl
+	and 7
+	ld b,a
+	ld c,0
+	ld a,1
+	jr z,{+}
+-:	scf \ rl c
+	rlca
+	djnz {-}
++:	ld (de),a
+	inc d
+	ld a,c
+	ld (de),a
+	dec d
+	dec d
+	inc e
+	jr nz,genLUT
+	ret
+;E = bitpos to insert
+;C=0 to insert 0, C=$FF to insert 1. Destroys all registers
+
+insertBit:  
+    ld (maxbits),a
+	ld d,dataLLUT2>>8
+	ld a,(de)
+	inc d       ;First LUT is: for(i=0;i<256;i++) arr1[i] = (i>>3)&7;
+	add a,L
+	ld L,a
+	jr nc,$+3
+	inc h       ;get address we need to perform insert op on
+	inc c
+	ld a,(de)   ;fetch masking bit. for(i=0;i<256;i++) arr2[i] = 1<<((~i)&7);
+	jr z,insertBit1
+insertBit0:
+	cpl
+	and (hl)    ;clear bit.
+	ld (hl),a
+	jr insertBitCont
+insertBit1:
+	or (hl)
+	ld (hl),a   ;set bit
+insertBitCont:
+	inc d       ;Third LUT: Mask to keep bits. 7=%01111111 0=%00000000
+	ld a,(maxbits)
+	inc a
+	ld (maxbits),a
+	sub e       ;maxbits-bitcount
+	rrca
+	rrca
+	rrca
+	and %00011111
+	inc a
+	ld b,a     ;max number of bytes to iterate over
+	ld a,(de)
+	cpl        ;we may have needed those bits reversed. 1's are what we keep with old
+	ld c,a
+	ld a,(hl)
+	rrc (hl)
+	push af   ;keep bit that was pushed out retained
+		xor (hl)  ;mask in old state
+		and c
+		xor (hl)
+		ld (hl),a
+	pop af
+-:	inc hl
+	rr (hl)
+	djnz {-}
+	ret
+    
 InterruptServiceRoutineEnter:
     jp InterruptServiceRoutine
 InterruptServiceRoutine:
@@ -282,13 +466,16 @@ doWait:
 idlePacket:
 .db 43
 .db %11111111
-.db %01111111
+.db %11111110
 .db %11111111
 .db %00000000
-.db %11111110
-.db %00000011
+.db %01111111
+.db %11000000
 .align 256
 dataLLut:
+.fill 512,0         ;I know this is bad should move this to saferam. But meh
+.align 256
+dataLLut2:
 .fill 512,0         ;I know this is bad should move this to saferam. But meh
 .endmodule
 .endrelocate
