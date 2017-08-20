@@ -53,8 +53,6 @@ startApp:
 	call ctrl.Initialize
 	ld hl,45678
 	ld (ctrl.curaddress),hl
-	ld a,123
-	ld (ctrl.throttle),a
 	ld a,1
 	ld (ctrl.direction),a
 	call ctrl.Refresh

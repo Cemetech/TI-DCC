@@ -16,6 +16,12 @@ _modulestart:
 ;                             b0 : 1 if switch on, 0 if switch off
 ;                             b1 : 1 if switch lock enabled, 0 if momentary
 ;
+;e_updown - Called when user pushes up or down to change train direction.
+;			On entry: A= DIR_FORWARD, DIR_BACKWARD
+;
+;e_leftright - Called when user pushes left or right to change throttle.
+;			   On entry: E = current throttle value
+;                        D = throttle mode (0:[0-14],1:[0-28],2:[0-128])
 
 
 
@@ -24,6 +30,10 @@ C_NOTMOMENTARY .equ 1
 
 C_FLAGS    .equ 0
 C_CALLBACK .equ 1
+
+DIR_FORWARD .equ 0
+DIR_REVERSE .equ 1
+DIR_ESTOP   .equ -1
 
 allocMem(2,temp)
 allocMem(1,curbank)
@@ -84,7 +94,7 @@ _evloop_banks_common:
 	call UpdateSwitchState
 	call UpdateSwitchLock
 	call UpdateTabs
-	jr _evloop_keywait_and_jumpback
+	jp _evloop_keywait_and_jumpback
 +:	cp skWindow  ;F2 - BANK 2
 	jr nz,{+}
 	ld a,1
@@ -142,10 +152,63 @@ _evloop_togglefunction:
 	call _evloop_call_numpad_event
 	call UpdateSwitchState
 	jp EventLoop
-++:	cp skClear \ ret z  ;REMOVE WHEN DONE TO MAKE APP ENDLESS
-	
+++:	cp skUp      ; -- MOVE TRAIN IN FORWARD DIRECTION
+	jr nz,{+}
+	ld a,DIR_FORWARD
+-:	ld (direction),a
+	call UpdateDirection
+	ld hl,_evloop_keywait_and_jumpback \ push hl \ ld hl,(e_updown) \ jp (hl)
++:	cp skDown   ; -- MOVE TRAIN IN REVERSE DIRECTION
+	jr nz,{+}
+	ld a,DIR_REVERSE
+	jr {-}
++:	cp skLeft  ; -- DECELERATE TRAIN
+	jr nz,{+}
+	ld b,50
+-:	ld a,(throttle)
+	dec a
+	jp m,_evloop_keywait_and_jumpback
+	ld (throttle),a
+	call _evloop_slow_throttle
+	jr nz,{-}
+	jp _evloop_keywait_and_jumpback
++:	cp skRight ; -- ACCELERATE TRAIN
+	jr nz,{+}
+	ld b,50
+-:	ld hl,_evloop_throttlemode_max
+	ld a,(throttlemode)
+	ld e,a
+	ld d,0
+	add hl,de
+	ld a,(throttle)
+	inc a
+	cp (hl)  ;cur-max. nc if exceeds maximum
+	jp nc,_evloop_keywait_and_jumpback
+	ld (throttle),a
+	call _evloop_slow_throttle
+	jr nz,{-}
+	jp _evloop_keywait_and_jumpback
++:	cp skClear \ ret z  ;REMOVE WHEN DONE TO MAKE APP ENDLESS
 	jp EventLoop
 	
+	
+_evloop_slow_throttle:  ;initial B set outside
+	push bc
+		call UpdateThrottle
+	pop bc
+	djnz _evloop_slow_throttle
+	ld a,(throttle)
+	ld e,a
+	ld a,(throttlemode)
+	ld d,a
+	ld hl,{+}
+	push hl
+	ld hl,(e_updown)
+	jp (hl)
++:	call kbd.getAnyKey
+	inc a
+	ld b,10
+	ret
 	
 _evloop_keywait_and_jumpback:
 	call kbd.keyWait
@@ -162,7 +225,8 @@ _evloop_call_numpad_event:
 	
 _evloop_numpad_table:
 .db sk9,sk8,sk7,sk6,sk5,sk4,sk3,sk2,sk1,$FF,$FF,$FF
-	
+_evloop_throttlemode_max:
+.db 14+1,28+1,128+1
 	
 
 ;-----------------------------------------------------------------------------------
