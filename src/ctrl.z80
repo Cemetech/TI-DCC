@@ -19,12 +19,19 @@ allocMem(1,throttle)       ;unsigned.
 allocMem(1,direction)      ;0=forward 1=backward -1:emergency stop triggered
 allocMem(1,tabflags)       ;b0=bank1 b1=bank2 [...] b4=[MODE]
 allocMem(2,curaddress)     ;0-32767 (signed 16 bit value, sign unused)
-allocMem((3*27),bankdata)  ;.db state / .dw callbackrtn /
+allocMem((27*1),bankdata)  ;.db state
+allocMem(2,e_numpad)
+allocMem(2,e_updown)
+allocMem(2,e_leftright)
+;allocMem(2,e_)
 
 ;------------------------------------------------------------------------------------
 Initialize:
 	xor a
-	ld de,DefaultControllerCallback
+	ld hl,DefaultControllerCallback
+	ld (e_numpad),hl
+	ld (e_updown),hl
+	ld (e_leftright),hl
 	ld (curbank),a
 	ld (throttle),a
 	ld (tabflags),a
@@ -33,10 +40,6 @@ Initialize:
 	ld b,27
 	ld hl,bankdata
 -:  ld (hl),0
-	inc hl
-	ld (hl),e
-	inc hl
-	ld (hl),d
 	inc hl
 	djnz {-}
 	call _drawlabels
@@ -53,17 +56,78 @@ Refresh:
 	call UpdateSwitchLock
 	call UpdateTabs
 	ret
+;------------------------------------------------------------------------------------
+EventLoop:
+	bcall(_kbdScan)
+	bcall(_getCSC)
+	ld hl,(curbank)
+	cp skYequ   ;F1 - BANK 1
+	jr nz,{+}
+	ld a,0
+_evloop_banks_common:
+	cp L
+	jr z,EventLoop
+	ld (curbank),a
+	call UpdateKeyLabels
+	call UpdateSwitchState
+	call UpdateSwitchLock
+	call UpdateTabs
+	jr EventLoop
++:	cp skWindow  ;F2 - BANK 2
+	jr nz,{+}
+	ld a,1
+	jr _evloop_banks_common
++:	cp skZoom    ;F3 - BANK 3
+	jr nz,{+}
+	ld a,2
+	jr _evloop_banks_common
++:	cp skGraph
+	jr nz,{+}
+	ld a,(tabflags)
+	xor %00010000
+	ld (tabflags),a
+	call UpdateTabs
+	jr EventLoop
++:	ld hl,_evloop_numpad_table
+	ld bc,9
+	cpir
+	jr nz,{+}
+	ld a,(tabflags)
+	bit 4,a
+	jr z,_evloop_togglefunction
+;	res 4,a \ ld (tabflags),a
+	ld a,(curbank)
+	ld e,a
+	ld h,(bankdata_size/3)+0
+	call math.multEandH
+	ld de,bankdata
+	add hl,de
+	add hl,bc
+	ld a,(hl)
+	xor 1 << C_NOTMOMENTARY
+	ld (hl),a
+	call UpdateSwitchLock
+	jp EventLoop
+_evloop_togglefunction:
+	jp EventLoop
++:	cp skClear \ ret z  ;REMOVE WHEN DONE TO MAKE APP ENDLESS
+	
+	jp EventLoop
+	
 
 
 
+_evloop_waitkeyrelease:
+	bcall(_kbdscan)
+	ld a,(kbdScanCode)
+	or a
+	jr nz,_evloop_waitkeyrelease
+	ret
 
-
-
-
-
-
-
-
+_evloop_numpad_table:
+.db sk9,sk8,sk7,sk6,sk5,sk4,sk3,sk2,sk1,$FF,$FF,$FF
+	
+	
 
 ;-----------------------------------------------------------------------------------
 
@@ -208,9 +272,9 @@ _draw7seg:
 	ld e,45
 _drawseg:  ;HL=X, BC=WH, E=Y
 	rrca
-	ld d,$20
+	ld d,XLC_DARKRED
 	jr nc,{+}
-	ld d,$E0
+	ld d,XLC_SEGRED
 +:	push hl
 		push af
 			ld a,e
@@ -396,6 +460,8 @@ _drawswitchleds:
 	ret
 	
 UpdateSwitchLock:
+	ld a,IMGBANK
+	out (5),a
 	call _getbankaddress
 	ld e,198
 	ld c,3
@@ -457,10 +523,6 @@ UpdateTabs:
 	ld (tabflags),a
 	ld c,a
 	jp _drawtabs
-	
-	
-	
-	
 	
 	
 	

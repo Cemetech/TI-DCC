@@ -41,3 +41,6 @@ TABBANK  .equ 5
 .define XLC_DARKBLUE $08
 .define XLC_DARKGREEN $01
 .define XLC_WHITE $FF
+.define XLC_SEGBLUE $17
+.define XLC_SEGRED $E0
+

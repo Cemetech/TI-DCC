@@ -11,7 +11,7 @@
 
 .page 0
 .db	80h, 0Fh, 0, 0, 0, 0
-.db	80h, 48h, "TRAINS  "   ;name 
+.db	80h, 48h, "TI-DCC  "   ;name of the app
 .db	80h, 90h
 .db	80h, 81h, 1
 .db	80h, 12h, 1, 15 ; or 15 for the TI-84+CSE
@@ -56,31 +56,9 @@ startApp:
 	ld (ctrl.throttle),a
 	ld a,1
 	ld (ctrl.direction),a
-	ld a,$FF
-	ld (ctrl.bankdata),a
-	ld a,%00001000
-	ld (ctrl.tabflags),a
-	ld a,2
-	ld (ctrl.curbank),a
 	call ctrl.Refresh
 	
-
-	ld hl,2000
--:	ld (ctrl.curaddress),hl
-	push hl
-		call ctrl.UpdateAddress
-	pop hl
-	dec hl
-	ld a,l
-	or h
-	jr nz,{-}
-
-
-
-
-
-
-
+	call ctrl.EventLoop
 
 exitApp:
 	;break down graphics
