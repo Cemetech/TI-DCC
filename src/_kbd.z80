@@ -1,0 +1,35 @@
+.module kbd
+.local
+_modulestart:
+
+
+keyWait:
+	call getAnyKey
+	inc a
+	jr nz,keyWait
+	ret
+	
+getAnyKey:
+	xor a
+	out (1),a
+	call _kwdelay
+	in a,(1)
+	push af
+		call _kwdelay
+		ld a,$FF
+		out (1),a
+	pop af
+	ret
+
+
+
+_kwdelay:
+	push af
+	pop af
+	push af
+	pop af
+	ret
+ 
+.echoln "MODULE kbd  SIZE : ",$-_modulestart
+.endlocal
+.endmodule
