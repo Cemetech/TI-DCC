@@ -1,10 +1,6 @@
-.nolist
-.binarymode TI8X
-#include "ti84pcse.inc"
-#include "dcse8.inc"
-.module main
-.export
-
+.module DCC
+.local
+_modulestart:
 
 IvtLocation	.equ	080h ; vector table at 8000h
 IsrLocation	.equ	85h ; ISR at TextShadPtrs
@@ -55,38 +51,7 @@ periodB .equ 1 << 1
 .var 1,func
 .list
 
-    .org UserMem
-BinaryStart:
-    .db $EF,$11     ;OpenLib(                                    2    2
-    .db "D",$BB,$BF,$BB,$BF,$BB,$C2,$BB,$C3,"CSE",$11,$3F  ;    14   16
-    .db $EF,$12,$3F ;ExecLib                                     3   19
-    .db $D5,$3F     ;Return                                      2   21
-    .db tExtTok,tAsm84CPrgm,$3F ;                                3   24 bytes total
-HeaderStart:
-    .dw ASMStart-HeaderStart ;offset to code
-    
-    .dw 10
-    .db 3
-    .db "DoorsCSE",8,0
-    
-    .dw Header_Author_End-Header_Author_Start
-    .db 2
-Header_Author_Start:
-    .db "Not Me",0
-Header_Author_End:
-
-    .dw Header_Desc_End-Header_Desc_Start
-    .db 0
-Header_Desc_Start:
-    .db "Ti-DCC",0
-Header_Desc_End:
-
-    .dw 0
-    .db $ff
-ASMStart:
-    .relocate UserMem
-ProgramStart:
-
+init:
 SetUpInterrupt:
     di
     xor a
@@ -145,50 +110,7 @@ SetUpInterrupt:
     ld (dccState.repeat),a
     ld (dccState.curDat),a
     ei
-loop:
-    bcall(_Kbdscan)
-    bcall(_getcsc)
-    cp skDown
-    jp z,TrainReverse
-    cp skUp
-    jp z,trainForward
-    cp sk2nd
-    jp z,TrainStop
-    cp skLeft
-    jp z,setLights
-    cp skRight
-    jp z,setLightsOff
-    jp Loop
-TrainStop:
-    ld b,%01010001
-    ld a,3
-    ld c,255
-    call send2byte
-    jp loop
-TrainReverse:
-    ld b,%01111001
-    ld a,3
-    ld c,255
-    call send2byte
-    jp loop
-TrainForward:
-    ld b,%01001001
-    ld a,3
-    ld c,255
-    call send2byte
-    jp loop
-setLights:
-    ld b,%10100010
-    ld a,3
-    ld c,1
-    call send2byte
-    jp loop
-setLightsOff:
-    ld b,%10100000
-    ld a,3
-    ld c,1
-    call send2byte
-    jp loop
+    ret
 
 send2byte:  ;in b,%01DCSSSS a,address c,repeat
     di
@@ -378,27 +300,6 @@ _notZeroBit2:
             ld a,periodA             ;Set period and Output Link Mirror Bit
             ld (dccState.flags),a    ;to %00000001
 stateBEnd:
-.endasm
-            ;Ok time to load the next bit
-            ld hl,(dccState.msgPTR)    ;10
-            inc hl
-            ld a,(dccState.size)     ;13
-            ld b,a                   ;4
-            rrca \ rrca \ rrca       ;12
-            and %00011111            ;4   bitcount // 8
-            add a,l                  ;4   
-            ld l,a                   ;4   Offset HL by ^
-            ld a,b                   ;4  
-            and %00000111            ;4   bitcount % 8
-            ld b,a                   ;4   loop counter
-            ld a,(hl)                ;7   ld a with byte
-            jp z,_bitZero                   ;10  85
-_loop:          
-            rrca                     ;4 * b    w28
-            djnz _loop                   ;13 * b   w91  Shift to bit 1
-_bitZero:     
-            and 1
-.asm
 
             ld hl,(dccState.msgPTR)
             inc hl
@@ -462,8 +363,8 @@ doWait:
     ex af,af'
     ei
     ret
-.align 16
-idlePacket:
+.align 16     ;This needs an alignment due to how I handle indexing
+idlePacket:   ;Preformed idle packet
 .db 43
 .db %11111111
 .db %11111110
@@ -471,13 +372,6 @@ idlePacket:
 .db %00000000
 .db %01111111
 .db %11000000
-.align 256
-dataLLut:
-.fill 512,0         ;I know this is bad should move this to saferam. But meh
-.align 256
-dataLLut2:
-.fill 512,0         ;I know this is bad should move this to saferam. But meh
+.echoln "MODULE gfx  SIZE : ",$-_modulestart
+.endlocal
 .endmodule
-.endrelocate
-.global
-.end

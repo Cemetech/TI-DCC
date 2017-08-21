@@ -1,0 +1,109 @@
+.binarymode intel
+.exportmode FullAssembly
+.export
+
+.defpage 0,16*1024,$4000
+
+.include "src/inc/ti84plus.inc"
+.include "src/inc/defs.inc"
+
+.include "obj/sprites.inc"
+
+.page 0
+.db	80h, 0Fh, 0, 0, 0, 0
+.db	80h, 48h, "TI-DCC  "   ;name of the app
+.db	80h, 90h
+.db	80h, 81h, 1
+.db	80h, 12h, 1, 15 ; or 15 for the TI-84+CSE
+.db	03h, 22h, 09h, 00h
+.db	02h, 00h
+.db	80h, 70h
+
+startApp:
+    di
+	;Make sure fast mode is set
+	ld a,1
+	out ($20),a
+	;Enable partial memory mapping to keep stack accessible
+	ld a,4
+	out ($27),a
+	in a,(5)
+	ld (cpage),a
+	;setup graphics driver and screen
+	call gfx.Start
+	ld a,XLC_DARKGRAY
+	call gfx.FillScreen
+	;buffers image data
+	in a,(5)
+	push af
+		ld a,IMGBANK
+		out (5),a
+		ld hl,imgbank1_c
+		ld de,$C000
+		push de
+			call dpk.depack
+		pop de
+		ld a,TABBANK
+		out (5),a
+		ld hl,imgbank2_c
+		call dpk.depack
+	pop af
+	out (5),a
+	;start the fancy work
+	call ctrl.Initialize
+	
+	; ********** EXAMPLE SET UP CODE ***********
+	
+	ld hl,doNothing
+	ld (e_numpad),hl   ;numpad key press down and up events
+	
+	ld hl,doNothing
+	ld (e_updown),hl   ;updown event for forward/reverse
+	
+	ld hl,doNothing
+	ld (e_leftright),hl ;leftright event for accel/decel
+	
+	
+	; ******** END EXAMPLE SET UP CODE *********
+	
+	call ctrl.Refresh    ;
+	call ctrl.EventLoop  ; change these two later to init to setup
+
+exitApp:
+	;break down graphics
+	call gfx.Exit
+	;disable partial memory mapping
+	ld a,(cpage)
+	out (5),a
+	xor a
+	out ($27),a
+	;exit application
+	bjump(_JForceCmdNoChar)
+
+.echoln "MODULE **** SIZE : ",$-$4000
+
+doNothing: ret
+
+;--------------------------------
+.include "src/ctrl.z80"   ;DCC controller frontend
+;--------------------------------
+.include "src/_dpk.z80"
+.include "src/_gfx.z80"
+.include "src/_math.z80"
+.include "src/_kbd.z80"
+;--------------------------------
+-
+.include "obj/sprites.z80"
+.echoln "SPRITE DATA SIZE : ",$-{-}
+
+;--------------------------------
+	
+	
+	
+.echoln "-----------------------------"
+.echoln "PAGE ",#," TOTL SIZE : ",$-$4000
+.echoln "-----------------------------"
+.global
+.end
+.end
+

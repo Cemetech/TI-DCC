@@ -1,0 +1,144 @@
+.module gfx
+.local
+_modulestart:
+
+;------------------
+Start:
+	call SetLcdWindowFull
+	ld hl,incmode(INCR)+wrapmode(INCR)+movemode(HORIZ)+bgrmode(1)+origin(1)
+	ld a,3
+	jp _setlcdreg
+;------------------
+Exit:
+	call SetLcdWindowFull
+	ld hl,$1038
+	ld a,$03
+	jp _setlcdreg
+;------------------
+FillScreen: ;in: A=color
+	push af
+		call SetLcdWindowFull
+		ld a,$22
+		out ($10),a
+		out ($10),a         ;set LCD write mode
+	pop af
+	ld bc,((320*240)/2)+256 ;Set to allow fullscreen coverage
+_fillareaaligned:
+	out ($11),a
+	out ($11),a
+_fillareaunaligned:
+	out ($11),a
+	out ($11),a
+	dec c
+	jp nz,_fillareaaligned
+	djnz _fillareaaligned
+	ret
+;------------------
+FillRect:  ;HL=X, A=Y, C=width-1, B=height-1, D=color
+	push de
+		push bc
+			call _setrectregion
+		pop de
+		inc e
+		inc d
+		ld h,d
+		call math.multEandH
+		push hl
+		pop bc
+		ld a,$22
+		out ($10),a
+		out ($10),a         ;set LCD write mode
+	pop af
+	srl b
+	rr  c
+	inc b
+	jp nc,_fillareaaligned
+	jp _fillareaunaligned
+;------------------
+;NOTE: SPRITE IS ASSUMED TO BE IN CURRENT MEMORY BANK ON INVOCATION
+SpriteNoclip:  ;HL=X, A=Y, C=width-1, B=height-1, DE=spriteaddr
+	push de
+		push bc
+			call _setrectregion
+		pop de
+		inc e
+		inc d
+		ld h,d
+		call math.multEandH
+		push hl
+		pop bc
+		ld a,$22
+		out ($10),a
+		out ($10),a         ;set LCD write mode
+	pop de
+	srl b
+	rr  c
+	inc b
+	jr nc,{+}
+-: 	ld a,(de)
+	inc de
+	out ($11),a
+	out ($11),a
++:  ld a,(de)
+	inc de
+	out ($11),a
+	out ($11),a
+	dec c
+	jp nz,{-}
+	djnz {-}
+	ret
+;------------------
+_setrectregion: ;HL=X, A=Y, C=width-1, B=height-1
+;note: 50=Ymin 51=Ymax 52=Xmin 53=Xmax
+	ld d,a
+	ld e,c
+	ld a,$52
+	call _setlcdreg  ;Xmin
+	inc a
+	ld c,e
+	ld e,b
+	ld b,0
+	add hl,bc
+	call _setlcdreg  ;Xmax
+	ld h,b
+	ld L,d
+	ld a,$50
+	call _setlcdreg  ;Ymin
+	inc a
+	ld d,b
+	add hl,de
+	call _setlcdreg
+	ld a,$20
+	ld hl,0
+	jp _setlcdreg    ;Ymax
+;------------------
+
+SetLcdWindowFull:
+	ld a,$50
+	ld hl,0
+	push hl
+		call _setlcdreg  ;Ymin
+		ld a,$52
+		call _setlcdreg  ;Xmin
+		dec a
+		ld hl,239
+		call _setlcdreg  ;Ymax
+		ld a,$53
+		ld hl,319
+		call _setlcdreg  ;Xmax
+	pop hl
+	ld a,$20
+	call _setlcdreg	 ;Y pos
+	inc a
+_setlcdreg:
+	out ($10),a 
+	out ($10),a
+	ld c,$11
+	out (c),h
+	out (c),l
+	ret 
+
+
+.echoln "MODULE gfx  SIZE : ",$-_modulestart
+.endlocal
+.endmodule
