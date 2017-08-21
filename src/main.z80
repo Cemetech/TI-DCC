@@ -19,6 +19,8 @@
 .db	02h, 00h
 .db	80h, 70h
 
+NONPAGED_MEMORY_SIZE .equ 2048
+
 startApp:
     di
 	;Make sure fast mode is set
@@ -33,6 +35,10 @@ startApp:
 	call gfx.Start
 	ld a,XLC_DARKGRAY
 	call gfx.FillScreen
+	;malloc memory to userMem for nonbankable scratch RAM
+	ld hl,NONPAGED_MEMORY_SIZE
+	ld de,userMem     ; $A60B
+	bcall(_InsertMem)
 	;buffers image data
 	in a,(5)
 	push af
@@ -41,11 +47,10 @@ startApp:
 		ld hl,imgbank1_c
 		ld de,$C000
 		push de
-			call dpk.depack
+			ld a,HELPBANK
+			out (5),a
+			ld hl,imgbank4_c
 		pop de
-		ld a,TABBANK
-		out (5),a
-		ld hl,imgbank2_c
 		call dpk.depack
 	pop af
 	out (5),a
@@ -55,19 +60,33 @@ startApp:
 	; ********** EXAMPLE SET UP CODE ***********
 	
 	ld hl,doNothing
-	ld (e_numpad),hl   ;numpad key press down and up events
+	ld (ctrl.e_numpad),hl    ;numpad key press down and up events
 	
 	ld hl,doNothing
-	ld (e_updown),hl   ;updown event for forward/reverse
+	ld (ctrl.e_updown),hl    ;updown event for forward/reverse
 	
 	ld hl,doNothing
-	ld (e_leftright),hl ;leftright event for accel/decel
+	ld (ctrl.e_leftright),hl ;leftright event for accel/decel
 	
 	
 	; ******** END EXAMPLE SET UP CODE *********
 	
-	call ctrl.Refresh    ;
-	call ctrl.EventLoop  ; change these two later to init to setup
+;	call ctrl.Refresh
+;	call ctrl.EventLoop
+	ld b,10
+--	ld hl,0
+-	push af \ pop af \ push af \ pop af \ push af \ pop af \ push af \ pop af
+	push af \ pop af \ push af \ pop af \ push af \ pop af \ push af \ pop af
+	push af \ pop af \ push af \ pop af \ push af \ pop af \ push af \ pop af
+	push af \ pop af \ push af \ pop af \ push af \ pop af \ push af \ pop af
+	dec hl
+	ld a,L
+	or H
+	jr nz,{-}
+	djnz {--}
+
+
+
 
 exitApp:
 	;break down graphics
@@ -77,6 +96,10 @@ exitApp:
 	out (5),a
 	xor a
 	out ($27),a
+	;free memory that was insert'd at the start
+	ld de,NONPAGED_MEMORY_SIZE
+	ld hl,userMem     ; $A60B
+	bcall(_DelMem)
 	;exit application
 	bjump(_JForceCmdNoChar)
 

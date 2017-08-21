@@ -30,6 +30,7 @@ allocMem(1,cpage)
 
 IMGBANK  .equ 4
 TABBANK  .equ 5
+HELPBANK .equ 6
 
 .define XLC_BLACK $00
 .define XLC_DARKGRAY $4A

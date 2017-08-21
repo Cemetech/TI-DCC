@@ -46,6 +46,7 @@ allocMem((27*1),bankdata)  ;.db state
 allocMem(2,e_numpad)
 allocMem(2,e_updown)
 allocMem(2,e_leftright)
+allocMem(1,menumode)       ;0=setup, 1=controller
 ;allocMem(2,e_)
 
 ;------------------------------------------------------------------------------------
@@ -58,6 +59,7 @@ Initialize:
 	ld (curbank),a
 	ld (throttle),a
 	ld (tabflags),a
+	ld (menumode),a
 	inc a
 	ld (throttlemode),a
 	ld b,27
@@ -65,10 +67,9 @@ Initialize:
 -:  ld (hl),0
 	inc hl
 	djnz {-}
-	call _drawlabels
-	call _drawkeysprites
-	ld c,0
-	jp _drawtabs
+	call _lbl_address_backers
+	jp _lbl_init_config
+
 ;-----------------------------------------------------------------------------------
 Refresh:
 	call UpdateAddress
@@ -230,85 +231,6 @@ _evloop_throttlemode_max:
 	
 
 ;-----------------------------------------------------------------------------------
-
-
-
-_drawlabels:
-	ld a,IMGBANK
-	out (5),a
-	ld hl,48  \ ld a,4   \ ld bc,wh(address_w,address_h)   \ ld de,address_a
-	call gfx.SpriteNoClip
-	ld hl,232 \ ld a,4   \ ld bc,wh(throttle_w,throttle_h) \ ld de,throttle_a
-	call gfx.SpriteNoClip
-	
-	ld de,uparrowoff_a
-	call _drawarrowuploc
-	ld de,downarrowoff_a
-	call _drawarrowdownloc
-	
-	ld hl,4   \ ld a,17  \ ld bc,wh(144,52) \ ld d,XLC_BLACK
-	call gfx.FillRect
-	ld hl,228 \ ld a,17  \ ld bc,wh(88,52)  \ ld d,XLC_BLACK
-	call gfx.FillRect
-	ld b,5
-	ld hl,8
-	call {+}
-	ld b,3
-	ld hl,232
-+:	
--:  push bc
-		push hl
-			xor a
-			call _draw7seg
-		pop hl
-		ld bc,28
-		add hl,bc
-	pop bc
-	djnz {-}
-	ret
-	
-_drawkeysprites:
-	ld a,IMGBANK
-	out (5),a
-	ld hl,93
-	ld c,3
---:	ld b,3
-	ld e,85
--:	call _drawkeyspriteface
-	ld a,e
-	add a,47
-	ld e,a
-	djnz {-}
-	ld de,46
-	add hl,de
-	dec c
-	jr nz,{--}
-	ret
-	
-	
-_drawkeyspriteface:
-	push bc
-		push de
-			push hl
-				ld a,e
-				ld bc,wh(numpadbutton_w,numpadbutton_h)
-				ld de,numpadbutton_a
-				call gfx.SpriteNoClip
-			pop hl
-		pop de
-		push de
-			push hl
-				ld bc,14
-				add hl,bc
-				ld a,-6
-				add a,e
-				ld bc,wh(13,4)
-				ld d,XLC_LIGHTGRAY
-				call gfx.FillRect
-			pop hl
-		pop de
-	pop bc
-	ret
 	
 _drawtabs:  ;C = bitfield for active tabs
 	ld a,TABBANK
@@ -339,109 +261,6 @@ _drawtabs:  ;C = bitfield for active tabs
 	djnz {-}
 	ret
 
-;HL= Xpos, A=%X7654321
-;  3     
-;1   6     
-;  4      
-;2   7     
-;  5      
-_draw7seg:
-	ld bc,wh(4,16)
-	ld e,25
-	call _drawseg
-	ld bc,wh(4,16)
-	ld e,45
-	call _drawseg
-	ld de,4
-	add hl,de
-	ld bc,wh(16,5)
-	ld e,21
-	call _drawseg
-	ld bc,wh(16,5)
-	ld e,41
-	call _drawseg
-	ld bc,wh(16,5)
-	ld e,61
-	call _drawseg
-	ld de,16
-	add hl,de
-	ld bc,wh(4,16)
-	ld e,25
-	call _drawseg
-	ld bc,wh(4,16)
-	ld e,45
-_drawseg:  ;HL=X, BC=WH, E=Y
-	rrca
-	ld d,XLC_DARKRED
-	jr nc,{+}
-	ld d,XLC_SEGRED
-+:	push hl
-		push af
-			ld a,e
-			call gfx.FillRect
-		pop af
-	pop hl
-	ret
-
-_draw7seg3num:  ;IX=Xstart HL=num
-	res 0,(iy+asm_flag1)
-	jr {+1@}
-_draw7seg5num:  ;IX=Xstart HL=num
-	res 0,(iy+asm_flag1)
-	ld bc,-10000
-	call {+}
-	ld bc,-1000
-	call {+}
-@:	ld bc,-100
-	call {+}
-	ld bc,-10
-	call {+}
-	ld bc,-1
-	set 0,(iy+asm_flag1)
-+:	ld a,-1
--:	inc a
-	add hl,bc
-	jr c,{-}
-	sbc hl,bc
-	push hl
-		or a
-		jr nz,{+}
-		bit 0,(iy+asm_flag1)
-		jr nz,{++}  ;jump to render zero
-		xor a
-		jr {+++}    ;jump to direct display 7seg OFF
-+:		set 0,(iy+asm_flag1)
-++:		ld hl,_7segnumtable
-		ld e,a
-		ld d,0
-		add hl,de
-		ld a,(hl)
-+++:	push ix
-		pop hl
-		call _draw7seg
-		ld de,28
-		add ix,de
-	pop hl
-	ret
-	
-_7segnumtable:
-.db %01110111  ;0
-.db %01100000  ;1
-.db %00111110  ;2
-.db %01111100  ;3
-.db %01101001  ;4
-.db %01011101  ;5
-.db %01011111  ;6
-.db %01100100  ;7
-.db %01111111  ;8
-.db %01111101  ;9
-	
-	
-	
-	
-	
-	
-	
 UpdateAddress:
 	ld ix,8
 	ld hl,(curaddress)
@@ -613,12 +432,16 @@ _getcurfuncbank:
 	ld h,9
 	jp math.multEandH
 	
+	
+UpdateTabs2:
+	ld a,(throttlemode)
+	jr {+}
 UpdateTabs:
 	ld a,(curbank)
-	inc a
++:	inc a
 	ld b,a
 	ld a,$80
--	rlca
+-:	rlca
 	djnz {-}
 	ld b,a
 	ld a,(tabflags)
@@ -629,10 +452,277 @@ UpdateTabs:
 	ld c,a
 	jp _drawtabs
 	
-	
-	
 DefaultControllerCallback:
 	ret
+	
+;=============================================================================
+; Backing initializations
+
+_lbl_init_config:
+	call _lbl_coverup_everything_else
+	ld a,TABBANK
+	out (5),a
+	ld de,$C000
+	ld hl,imgbank3_c ;configbar
+	call dpk.depack
+	ld a,HELPBANK
+	out (5),a
+	ld hl,169
+	ld a,7
+	ld bc,wh(help1_w,help1_h)
+	ld de,help1_a
+	call gfx.Sprite2BitNoclip
+	ld hl,165
+	ld a,102
+	ld bc,wh(help2_w,help2_h)
+	ld de,help2_a
+	call gfx.Sprite2BitNoclip
+	ld hl,15
+	ld a,104
+	ld bc,wh(help3_w,help3_h)
+	ld de,help3_a
+	call gfx.Sprite2BitNoclip
+	ld hl,32
+	ld a,197
+	ld bc,wh(help4_w,help4_h)
+	ld de,help4_a
+	call gfx.Sprite2BitNoclip
+	
+	
+	
+	
+	
+	jp UpdateTabs2
+
+
+
+_lbl_coverup_everything_else:
+	;covers up throttle (top whole section)
+	ld hl,155
+	ld a,0
+	ld bc,wh(165,69)
+	ld d,XLC_DARKGRAY
+	call gfx.FillRect
+	;covers up left half because apparently width is too small.
+	ld hl,0
+	ld a,69
+	ld bc,wh(160,150)
+	ld d,XLC_DARKGRAY
+	call gfx.FillRect
+	;finish up by covering right half
+	ld hl,160
+	ld a,69
+	ld bc,wh(160,150)
+	ld d,XLC_DARKGRAY
+	jp gfx.FillRect
+
+_lbl_arrow_backers:
+	ld de,uparrowoff_a
+	call _drawarrowuploc
+	ld de,downarrowoff_a
+	jp _drawarrowdownloc
+
+_lbl_throttle_backers:
+	ld a,IMGBANK
+	out (5),a
+	ld hl,232 
+	ld a,4  
+	ld bc,wh(throttle_w,throttle_h) 
+	ld de,throttle_a
+	call gfx.SpriteNoClip
+	ld hl,228
+	ld a,17
+	ld bc,wh(88,52)
+	ld d,XLC_BLACK
+	call gfx.FillRect
+ 	ld b,3
+	ld hl,232
+	jr _lbl_backer_segments
+
+_lbl_address_backers:
+	ld a,IMGBANK
+	out (5),a
+	ld hl,48
+	ld a,4
+	ld bc,wh(address_w,address_h)
+	ld de,address_a
+	call gfx.SpriteNoClip
+	ld hl,4
+	ld a,17
+	ld bc,wh(144,52)
+	ld d,XLC_BLACK
+	call gfx.FillRect
+	ld b,5
+	ld hl,8
+_lbl_backer_segments:
+	push bc
+		push hl
+			xor a
+			call _draw7seg
+		pop hl
+		ld bc,28
+		add hl,bc
+	pop bc
+	djnz _lbl_backer_segments
+	ret
+
+_lbl_keysprites:
+	ld a,IMGBANK
+	out (5),a
+	ld hl,93
+	ld c,3
+--:	ld b,3
+	ld e,85
+-:	push bc
+		push de
+			push hl
+				ld a,e
+				ld bc,wh(numpadbutton_w,numpadbutton_h)
+				ld de,numpadbutton_a
+				call gfx.SpriteNoClip
+			pop hl
+		pop de
+		push de
+			push hl
+				ld bc,14
+				add hl,bc
+				ld a,-6
+				add a,e
+				ld bc,wh(13,4)
+				ld d,XLC_LIGHTGRAY
+				call gfx.FillRect
+			pop hl
+		pop de
+	pop bc
+	ld a,e
+	add a,47
+	ld e,a
+	djnz {-}
+	ld de,46
+	add hl,de
+	dec c
+	jr nz,{--}
+	ret
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+;=============================================================================
+; 7-Segment Stuffs 
+
+;HL= Xpos, A=%X7654321
+;  3     
+;1   6     
+;  4      
+;2   7     
+;  5      
+_draw7seg:
+	ld bc,wh(4,16)
+	ld e,25
+	call _drawseg
+	ld bc,wh(4,16)
+	ld e,45
+	call _drawseg
+	ld de,4
+	add hl,de
+	ld bc,wh(16,5)
+	ld e,21
+	call _drawseg
+	ld bc,wh(16,5)
+	ld e,41
+	call _drawseg
+	ld bc,wh(16,5)
+	ld e,61
+	call _drawseg
+	ld de,16
+	add hl,de
+	ld bc,wh(4,16)
+	ld e,25
+	call _drawseg
+	ld bc,wh(4,16)
+	ld e,45
+_drawseg:  ;HL=X, BC=WH, E=Y
+	rrca
+	ld d,XLC_DARKRED
+	jr nc,{+}
+	ld d,XLC_SEGRED
++:	push hl
+		push af
+			ld a,e
+			call gfx.FillRect
+		pop af
+	pop hl
+	ret
+
+_draw7seg3num:  ;IX=Xstart HL=num
+	res 0,(iy+asm_flag1)
+	jr {+1@}
+_draw7seg5num:  ;IX=Xstart HL=num
+	res 0,(iy+asm_flag1)
+	ld bc,-10000
+	call {+}
+	ld bc,-1000
+	call {+}
+@:	ld bc,-100
+	call {+}
+	ld bc,-10
+	call {+}
+	ld bc,-1
+	set 0,(iy+asm_flag1)
++:	ld a,-1
+-:	inc a
+	add hl,bc
+	jr c,{-}
+	sbc hl,bc
+	push hl
+		or a
+		jr nz,{+}
+		bit 0,(iy+asm_flag1)
+		jr nz,{++}  ;jump to render zero
+		xor a
+		jr {+++}    ;jump to direct display 7seg OFF
++:		set 0,(iy+asm_flag1)
+++:		ld hl,_7segnumtable
+		ld e,a
+		ld d,0
+		add hl,de
+		ld a,(hl)
++++:	push ix
+		pop hl
+		call _draw7seg
+		ld de,28
+		add ix,de
+	pop hl
+	ret
+	
+_7segnumtable:
+.db %01110111  ;0
+.db %01100000  ;1
+.db %00111110  ;2
+.db %01111100  ;3
+.db %01101001  ;4
+.db %01011101  ;5
+.db %01011111  ;6
+.db %01100100  ;7
+.db %01111111  ;8
+.db %01111101  ;9
+	
+;=============================================================================
 
 
 
