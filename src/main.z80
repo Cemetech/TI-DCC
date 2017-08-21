@@ -53,17 +53,17 @@ startApp:
 	call ctrl.Initialize
 	
 	; ********** EXAMPLE SET UP CODE ***********
+
+	ld hl,dcc.handleFunction
+	ld (ctrl.e_numpad),hl   ;numpad key press down and up events
 	
-	ld hl,doNothing
-	ld (e_numpad),hl   ;numpad key press down and up events
+	ld hl,dcc.handleReverser
+	ld (ctrl.e_updown),hl   ;updown event for forward/reverse
 	
-	ld hl,doNothing
-	ld (e_updown),hl   ;updown event for forward/reverse
+	ld hl,dcc.handleThrottle
+	ld (ctrl.e_leftright),hl ;leftright event for accel/decel
 	
-	ld hl,doNothing
-	ld (e_leftright),hl ;leftright event for accel/decel
-	
-	
+	call DCC.init       ;setup interrupt handler
 	; ******** END EXAMPLE SET UP CODE *********
 	
 	call ctrl.Refresh    ;
@@ -91,6 +91,7 @@ doNothing: ret
 .include "src/_gfx.z80"
 .include "src/_math.z80"
 .include "src/_kbd.z80"
+.include "src/_DCC.z80"
 ;--------------------------------
 -
 .include "obj/sprites.z80"

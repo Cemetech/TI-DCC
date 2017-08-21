@@ -9,20 +9,29 @@ periodA .equ 1
 periodB .equ 1 << 1
 
 ;.varloc appData,256 ; Used by IVT
-.varloc plotSScreen,768
-.varloc saveSScreen,768
-;.varloc statVars,531 ; Let us shoot to not use this, Also BCALL(_DelRes)
-.local
+.varloc usermem,244  ;A60B-A6FF
+BitMask_LookupTables .equ $A700
+
 .struct dccStateStruct      ;Digital Command Station State Vars
     .var 2, msgPTR    ;pointer to current message being processed
     .var 1, size     ;current bit "count" 
     .var 1, curDat    ;Current shifted data byte
     .var 1, flags     ;bit mask
                       ; b0 = Output Link Mirror Bit
-                      ; b1 = Period A/B
+                      ; b1 = Line Power control      -- needs to be implemented!
+                      ; b2 = Period A/B
+                      ; b3 = Forward/Reverse
+                      ; b4 = Address Size
     .var 1, waitCTR   ;Set to 255 for pausing between packets ~15ms   
     .var 1, repeat    ; 0-254 times, 255 until changed
+    .var 2,address
 .endstruct 
+
+OutputMirror = 0
+LinePowerControl = 1
+PeriodAB = 2
+Direction = 3
+AddressSize = 4
 ;Default initializations for queueing message
 ; <ptr>
 ; 0 
@@ -42,14 +51,16 @@ periodB .equ 1 << 1
     .var 1, data8     ; error == address ^ data
     .var 1, data9     ; error == address ^ data
 .endstruct
+
 .var dccStateStruct, dccstate
 .var dccPacketStruct, dccIdlePacket
 .var dccPacketStruct, dccUserPacket
 .endlocal
+
 .var 10,packetGenScratch
 .var 1,maxbits
 .var 1,func
-.list
+
 
 init:
 SetUpInterrupt:
@@ -88,33 +99,199 @@ SetUpInterrupt:
     out (pCrstlTmr1Cfg),a
     ld a,218                ; Set loop period for ~58us at 15MHz to Port $32
     out (pCrstlTmr1Count),a
-
     im 2
-                            ;Testing initializers
     
-    ld de,dataLLUT
-    call genLUT             ;set up lut for interrupts
-    ld de,dataLLUT2
-    call genLUT2             ;set up lut for interrupts
+    ld de,BitMask_LookupTables
+    call generateLUT             ;set up lut for interrupts
     
     ex af,af'
     xor a
-    ex af,af'
+    ex af,af'               ;Zero wait
     xor a
     ld (dccState.flags),a
     ld (dccState.size),a
+    ld (dccState.waitCTR),a
     ld hl,idlePacket
     ld (dccState.msgPTR),hl
     ld a,255
-    ld (dccState.waitCTR),a
     ld (dccState.repeat),a
     ld (dccState.curDat),a
     ei
     ret
+    
+InterruptServiceRoutineEnter:
+    jp InterruptServiceRoutine
+InterruptServiceRoutine:
+    ex af,af'               
+        exx
+            ld bc,(%00000011 << 8)+pCrstlTmr1Cfg ;
+            out (c),b                ;17cc Faster then PushPop
+            
+            or a                     ;If != Zero.
+            jp nz,doWait
+            
+            ld a,(dccState.flags)
+            out (0),a                ;Output bits to port 
+            bit PeriodAB,a                  ;Check period
+            ld a,(dccState.curDat)   ;Load A with current data being processed
+            jp nz,doPeriodB          ;If Z We are period A   
+doPeriodA:
+            or a                     ;Check current data Bit
+            jp nz,_notZeroBit1       ;If Z set wait
+            ld a,1  
+            ld (dccState.waitCTR),a  ;Load Wait
+_notZeroBit1:  
+            ld a,periodB             ;Set period and Output Link Mirror Bit
+            ld (dccState.flags),a    ;to %00000010
+            jp doIntEnd
+doPeriodB:
+            or a                     ;Check current data bit
+            jp nz,_notZeroBit2       ;If Z set Wait
+            ld a,1                   ;
+            ld (dccState.waitCTR),a  ;Load Wait
+_notZeroBit2:  
+            ld a,periodA             ;Set period and Output Link Mirror Bit
+            ld (dccState.flags),a    ;to %00000001
+stateBEnd:
 
-send2byte:  ;in b,%01DCSSSS a,address c,repeat
+            ld hl,(dccState.msgPTR)
+            inc hl
+            ld a,(dccState.size)
+            ld e,a
+            ld d,BitMask_LookupTables>>8
+            ld a,(de) \	inc d        ;First LUT is for(i=0;i<256;i++) arr1[i] = (i>>3)&7;
+            add a,L
+            ld L,a
+            jr nc,$+3
+            inc h
+            ld a,(de)                ;Second LUT is for(i=0;i<256;i++) arr2[i] = 1<<(i&7);
+            and (hl)
+           
+            ld (dccState.curDat),a
+            
+            ld hl,(dccState.msgPTR)  
+            ld a,(dccState.size)
+            cp (hl)                     ;sub max from current
+            ;if zero
+            jp z,checkRepeat            ;If 0 we have sent the packet
+            inc a
+            ld (dccState.size),a        ;Store the size back for next call
+doIntEnd:   
+            ld a,(dccState.waitCTR)     ;waitCTR is set in loop or at last wait count
+        exx
+    ex af,af'
+    ei
+    ret
+    
+checkRepeat:                            ;If repeat !=0 repeat packet send
+            ld a,(dccState.repeat)
+            cp 255
+            jp z,repeatEntry            ;If repeat is 255 requeue
+            or a                        
+            jp loadIdleAfterRepeat      ;If repeat is zero load idle packet
+            dec a
+            ld (dccState.repeat),a      ;Else Dec and store repeat
+repeatEntry:
+            xor a
+            ld (dccState.size),a        ;reset packet
+            ld (dccState.flags),a
+            ld a,1
+            ld (dccState.waitCTR),a     ;Needs code to handle DC mode
+            jp doWait                   ;no need to rest curdat is already 1
+            
+            
+loadIdleAfterRepeat:
+            xor a
+            ld (dccState.flags),a
+            ld (dccState.size),a
+            ld hl,idlePacket
+            ld (dccState.msgPTR),hl
+            ld a,255
+            ld (dccState.waitCTR),a
+            ld (dccState.repeat),a
+            ld (dccState.curDat),a
+doWait:
+            dec a
+            ld (dccState.waitCTR),a ;Save wait
+        exx
+    ex af,af'
+    ei
+    ret
+;Handles setting direction bit. Do we want to play with the throttle here?
+handleReverser:
+    ld hl,dccState.Flags
+    cp ctrl.DIR_REVERSE
+    jp nz,_dirForward
+_dirReverse:
+    set 3,(hl)
+    ret
+_dirForward:
+    res 3,(hl)
+    ret
+    
+    
+handleThrottle:
+    ld hl,dccState.Flags
+    ld a,d
+    cp 2
+    jp z,_128Speed
+    or a
+    jp nz,_28Speed
+_14Speed:
+    ld a,%01000000
+    bit Direction,(hl)
+    jp z,_setReverse14
+_setForward14:
+    set 5,a          ;%01D00000
+_setReverse14:
+    dec e            ;Set to -1-13
+    jp m,_setStop
+    inc e \ inc e
+    or e             ;%01DXSSSS 
+_setStop:
+    ld b,e
+    ld c,2
+_JPBasedOffAddressSize:
+    bit AddressSize,(hl) ;z for short address
+    jp nz,_LongAddress
+_ShortAddress
+    ld a,(dccState.address)
+    jp dccSendShortSpeed
+_LongAddress:
+    ld hl,(dccState.address)
+    jp dccSendLongSpeed
+    
+    
+    
+_28Speed:  ;speed in E
+    ld a,%00010000
+    and e
+    add a,254          ;anything over 239
+    rl e
+    and %00011111
+    bit Direction,(hl)
+    jp nz,_setReverse28 ; Leave res for reverse
+_setForward28:
+    set 5,e          ;%XXD43210
+_setReverse28:       
+    ld b,e
+    set 6,b
+    ld c,2
+    jp _JPBasedOffAddressSize 
+    
+    
+_128Speed:
+    ;Handle the sane speed packet
+    ;need to implement 4byte packets first though so 
+    ;ABORT
+    ret
+    
+handleFunction:
+    ret
+    
+dccSendShortSpeed:  ;in b,%01DCSSSS a,address c,repeat
     di
-    ld (packetGenScratch+3),a      ; Save Adress
+    ld (packetGenScratch+3),a      ;Save Address
     xor b
     ld (packetGenScratch+5),a      ;Save error
     ld a,b
@@ -124,7 +301,7 @@ send2byte:  ;in b,%01DCSSSS a,address c,repeat
     ld (packetGenScratch+2),a      ;Save Preamble
        
     ld a,c
-    ld (dccState.repeat),a
+    ld (dccState.repeat),a         ;save repeat count
     ld a,45
     ld (packetGenScratch),a     
     
@@ -162,8 +339,9 @@ send2byte:  ;in b,%01DCSSSS a,address c,repeat
     ld (dccState.curDat),a
     ei
     ret
-
-genLUT:  ;in: DE=starting address. Must be 256-byte aligned.
+dccSendLongSpeed:
+    ret ;To be done
+generateLUT:  ;in: DE=starting address. Must be 256-byte aligned.
 	ld a,e
 	rrca \ rrca \ rrca
 	and 7
@@ -175,51 +353,27 @@ genLUT:  ;in: DE=starting address. Must be 256-byte aligned.
 	ld b,a
 	ld c,0
 	ld a,1
-	jr z,{+}
--:	scf \ rl c
+	jr z,_genLutNoShift
+_genLutShiftLeft:
+	scf \ rl c
 	rlca
-	djnz {-}
-+:	ld (de),a
+	djnz _genLutShiftLeft
+_genLutNoShift:
+	ld (de),a
 	inc d
 	ld a,c
 	ld (de),a
 	dec d
 	dec d
 	inc e
-	jr nz,genLUT
+	jr nz,generateLUT
 	ret
     
-genLUT2:  ;in: DE=starting address. Must be 256-byte aligned.
-	ld a,e
-	rrca \ rrca \ rrca
-	and 7
-	ld (de),a
-	ld a,e
-	inc d
-	cpl
-	and 7
-	ld b,a
-	ld c,0
-	ld a,1
-	jr z,{+}
--:	scf \ rl c
-	rlca
-	djnz {-}
-+:	ld (de),a
-	inc d
-	ld a,c
-	ld (de),a
-	dec d
-	dec d
-	inc e
-	jr nz,genLUT
-	ret
 ;E = bitpos to insert
 ;C=0 to insert 0, C=$FF to insert 1. Destroys all registers
-
 insertBit:  
     ld (maxbits),a
-	ld d,dataLLUT2>>8
+	ld d,BitMask_LookupTables>>8
 	ld a,(de)
 	inc d       ;First LUT is: for(i=0;i<256;i++) arr1[i] = (i>>3)&7;
 	add a,L
@@ -265,104 +419,6 @@ insertBitCont:
 	djnz {-}
 	ret
     
-InterruptServiceRoutineEnter:
-    jp InterruptServiceRoutine
-InterruptServiceRoutine:
-
-    ex af,af'               
-        exx
-            ld bc,(%00000011 << 8)+pCrstlTmr1Cfg ;
-            out (c),b                ;17cc Faster then PushPop
-            
-            or a                     ;If != Zero.
-            jp nz,doWait
-            
-            ld a,(dccState.flags)
-            out (0),a                ;Output bits to port 
-            bit 1,a                  ;Check period
-            ld a,(dccState.curDat)   ;Load A with current data being processed
-            jp nz,doPeriodB          ;If Z We are period A   
-doPeriodA:
-            or a                  ;Check current data Bit
-            jp nz,_notZeroBit1                 ;If Z set wait
-            ld a,1  
-            ld (dccState.waitCTR),a  ;Load Wait
-_notZeroBit1:  
-            ld a,periodB             ;Set period and Output Link Mirror Bit
-            ld (dccState.flags),a    ;to %00000010
-            jp doIntEnd
-doPeriodB:
-            or a                     ;Check current data bit
-            jp nz,_notZeroBit2                  ;If Z set Wait
-            ld a,1                   ;
-            ld (dccState.waitCTR),a  ;Load Wait
-_notZeroBit2:  
-            ld a,periodA             ;Set period and Output Link Mirror Bit
-            ld (dccState.flags),a    ;to %00000001
-stateBEnd:
-
-            ld hl,(dccState.msgPTR)
-            inc hl
-            ld a,(dccState.size)
-            ld e,a
-            ld d,dataLLUT>>8
-            ld a,(de) \	inc d  ;First LUT is for(i=0;i<256;i++) arr1[i] = (i>>3)&7;
-            add a,L
-            ld L,a
-            jr nc,$+3
-            inc h
-            ld a,(de)          ;Second LUT is for(i=0;i<256;i++) arr2[i] = 1<<(i&7);
-            and (hl)
-           
-            ld (dccState.curDat),a
-            
-            ld hl,(dccState.msgPTR)  
-            ld a,(dccState.size)
-            cp (hl)                     ;sub max from current
-            ;if zero
-            jp z,checkRepeat            ;If 0 we have sent the packet
-            inc a
-            ld (dccState.size),a        ;Store the size back for next call
-doIntEnd:   
-            ld a,(dccState.waitCTR)     ;waitCTR is set in loop or at last wait count
-        exx
-    ex af,af'
-    ei
-    ret
-checkRepeat:                            ;If repeat !=0 repeat packet send
-            ld a,(dccState.repeat)
-            cp 255
-            jp z,repeatEntry            ;If repeat is 255 requeue
-            or a                        
-            jp loadIdleAfterRepeat      ;If repeat is zero load idle packet
-            dec a
-            ld (dccState.repeat),a      ;Else Dec and store repeat
-repeatEntry:
-            xor a
-            ld (dccState.size),a        ;reset packet
-            ld (dccState.flags),a
-            ld a,255
-            ld (dccState.waitCTR),a     ;Wait ~14ms for sanity
-            jp doWait                   ;no need to rest curdat is already 1
-            
-            
-loadIdleAfterRepeat:
-            xor a
-            ld (dccState.flags),a
-            ld (dccState.size),a
-            ld hl,idlePacket
-            ld (dccState.msgPTR),hl
-            ld a,255
-            ld (dccState.waitCTR),a
-            ld (dccState.repeat),a
-            ld (dccState.curDat),a
-doWait:
-            dec a
-            ld (dccState.waitCTR),a ;Save wait
-        exx
-    ex af,af'
-    ei
-    ret
 .align 16     ;This needs an alignment due to how I handle indexing
 idlePacket:   ;Preformed idle packet
 .db 43
@@ -372,6 +428,6 @@ idlePacket:   ;Preformed idle packet
 .db %00000000
 .db %01111111
 .db %11000000
-.echoln "MODULE gfx  SIZE : ",$-_modulestart
+.echoln "MODULE DCC  SIZE : ",$-_modulestart
 .endlocal
 .endmodule
