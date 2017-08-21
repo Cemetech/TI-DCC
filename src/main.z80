@@ -40,53 +40,32 @@ startApp:
 	ld de,userMem     ; $A60B
 	bcall(_InsertMem)
 	;buffers image data
-	in a,(5)
-	push af
-		ld a,IMGBANK
-		out (5),a
-		ld hl,imgbank1_c
-		ld de,$C000
-		push de
-			ld a,HELPBANK
-			out (5),a
-			ld hl,imgbank4_c
-		pop de
-		call dpk.depack
-	pop af
-	out (5),a
+	ld a,IMGBANK
+	ld hl,imgbank1_c
+	call dpk.depackToBank
+	ld a,HELPBANK
+	ld hl,imgbank4_c
+	call dpk.depackToBank
 	;start the fancy work
 	call ctrl.Initialize
 	
 	; ********** EXAMPLE SET UP CODE ***********
 	
 	ld hl,doNothing
-	ld (ctrl.e_numpad),hl    ;numpad key press down and up events
+	ld (e_numpad),hl    ;numpad key press down and up events
 	
 	ld hl,doNothing
-	ld (ctrl.e_updown),hl    ;updown event for forward/reverse
+	ld (e_updown),hl    ;updown event for forward/reverse
 	
 	ld hl,doNothing
-	ld (ctrl.e_leftright),hl ;leftright event for accel/decel
+	ld (e_leftright),hl ;leftright event for accel/decel
+	
+	ld hl,doNothing
+	ld (e_cfgack),hl    ;when user pushes OK on config screen
 	
 	
 	; ******** END EXAMPLE SET UP CODE *********
-	
-;	call ctrl.Refresh
-;	call ctrl.EventLoop
-	ld b,10
---	ld hl,0
--	push af \ pop af \ push af \ pop af \ push af \ pop af \ push af \ pop af
-	push af \ pop af \ push af \ pop af \ push af \ pop af \ push af \ pop af
-	push af \ pop af \ push af \ pop af \ push af \ pop af \ push af \ pop af
-	push af \ pop af \ push af \ pop af \ push af \ pop af \ push af \ pop af
-	dec hl
-	ld a,L
-	or H
-	jr nz,{-}
-	djnz {--}
-
-
-
+	call ctrl.EventLoop
 
 exitApp:
 	;break down graphics

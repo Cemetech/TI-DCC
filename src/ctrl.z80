@@ -22,7 +22,18 @@ _modulestart:
 ;e_leftright - Called when user pushes left or right to change throttle.
 ;			   On entry: E = current throttle value
 ;                        D = throttle mode (0:[0-14],1:[0-28],2:[0-128])
-
+;
+;e_cfgack - Called when the user hits the "OK" button on the config screen.
+;           On entry:  DE = address
+;                      B  = 0 if DC mode disabled, 1 if DC mode enabled
+;					   C  = 0 if short address, 1 if long address
+;
+;e_estop - Called when the emergency stop button has been pushed.
+;          On entry:   None
+;
+;
+;
+;
 
 
 C_SWITCHSTATE  .equ 0
@@ -35,19 +46,6 @@ DIR_FORWARD .equ 0
 DIR_REVERSE .equ 1
 DIR_ESTOP   .equ -1
 
-allocMem(2,temp)
-allocMem(1,curbank)
-allocMem(1,throttlemode)   ;0: 0-14, 1: 0-28, 2:0-128
-allocMem(1,throttle)       ;unsigned.
-allocMem(1,direction)      ;0=forward 1=backward -1:emergency stop triggered
-allocMem(1,tabflags)       ;b0=bank1 b1=bank2 [...] b4=[MODE]
-allocMem(2,curaddress)     ;0-32767 (signed 16 bit value, sign unused)
-allocMem((27*1),bankdata)  ;.db state
-allocMem(2,e_numpad)
-allocMem(2,e_updown)
-allocMem(2,e_leftright)
-allocMem(1,menumode)       ;0=setup, 1=controller
-;allocMem(2,e_)
 
 ;------------------------------------------------------------------------------------
 Initialize:
@@ -56,10 +54,13 @@ Initialize:
 	ld (e_numpad),hl
 	ld (e_updown),hl
 	ld (e_leftright),hl
+	ld (e_cfgack),hl
+	ld (e_estop),hl
 	ld (curbank),a
 	ld (throttle),a
 	ld (tabflags),a
 	ld (menumode),a
+	ld (enableDCmode),a
 	inc a
 	ld (throttlemode),a
 	ld b,27
@@ -72,7 +73,12 @@ Initialize:
 
 ;-----------------------------------------------------------------------------------
 Refresh:
-	call UpdateAddress
+	ld a,(menumode)
+	dec a
+	jr z,{+}
+	;fill in other for refresh config screen
+	jp UpdateTabs2
++:	call UpdateAddress
 	call UpdateThrottle
 	call UpdateDirection
 	call UpdateKeyLabels
@@ -83,152 +89,54 @@ Refresh:
 ;------------------------------------------------------------------------------------
 EventLoop:
 	call kbd.gsGetCSC
-	ld hl,(curbank)
-	cp skYequ   ;F1 - BANK 1
-	jr nz,{+}
-	ld a,0
-_evloop_banks_common:
-	cp L
-	jr z,EventLoop
-	ld (curbank),a
-	call UpdateKeyLabels
-	call UpdateSwitchState
-	call UpdateSwitchLock
-	call UpdateTabs
-	jp _evloop_keywait_and_jumpback
-+:	cp skWindow  ;F2 - BANK 2
-	jr nz,{+}
-	ld a,1
-	jr _evloop_banks_common
-+:	cp skZoom    ;F3 - BANK 3
-	jr nz,{+}
-	ld a,2
-	jr _evloop_banks_common
-+:	; -- Handle F5 events below
-	cp skGraph
-	jr nz,{+}
-	ld a,(tabflags)
-	xor %00010000
-	ld (tabflags),a
-	call UpdateTabs
-	jp _evloop_keywait_and_jumpback
-+:	; -- Handle numkey events below
-	ld hl,_evloop_numpad_table
-	ld bc,9
+	ld de,(menumode)
+	;-- Yequ,Window,Zoom (F1,F2,F3) keys
+	ld bc,3
+	ld hl,_evl_tabtable
 	cpir
-	jr nz,{++}
-	call _getbankaddress
-	ld a,bankdata_size/27
--	add ix,bc
-	add hl,bc
-	dec a
-	jr nz,{-}
-	ld a,(tabflags)
-	bit 4,a
-	jr z,_evloop_togglefunction
-;	res 4,a \ ld (tabflags),a
-	ld a,(hl)
-	xor 1 << C_NOTMOMENTARY
-	res C_SWITCHSTATE,a
-	ld (hl),a
-	call UpdateSwitchLock
-	jp _evloop_keywait_and_jumpback
-_evloop_togglefunction:
-	call _evloop_toggleswitch
-	call _getcurfuncbank
-	add hl,bc
-	ld c,L
-	ld a,(ix+C_FLAGS)
-	and 1 << C_SWITCHSTATE
-	push bc
-		push ix
-			call _evloop_call_numpad_event
-			call UpdateSwitchState
-		pop ix
-	pop bc
-	bit C_NOTMOMENTARY,(ix+C_FLAGS)
-	jp nz,_evloop_keywait_and_jumpback
-	call kbd.keyWait
-	call _evloop_toggleswitch
-	call _evloop_call_numpad_event
-	call UpdateSwitchState
+	jp z,_evl_fnbanks
+	;-- Graph (F5) key
+	cp skGraph
+	jp z,_evl_graphkey
+	;-- Trace (F4) key
+	cp skTrace
+	jp z,_evl_tracekey
+	;-- Numkeys (9,8,7,6,5,4,3,2,1[,0])
+	ld d,e
+	rrc d ;carry if controller, nc if config
+	ld bc,9
+	jr c,{+}
+	inc bc ;need full range keypad if in config
++:	ld hl,_evl_nptable
+	cpir
+	jp z,_evl_numpad
+	;-- Up key [config: -- control: Move train forward]
+	cp skUp
+	jp z,_evl_upkey
+	;-- Down key [config: -- control: Move train in reverse]
+	cp skDown
+	jp z,_evl_downkey
+	;-- Left key [config: -- control: Decelerate train]
+	ld b,50  ;SHARED FOR L/R. DO NOT REMOVE
+	cp skLeft
+	jp z,_evl_leftkey
+	;-- Right key [config: -- control: Accelerate train]
+	cp skRight
+	jp z,_evl_rightkey
+	;-- Clear key [exit event loop]
+	cp skClear
+	ret z
+	;-- Enter key [config: -- control: eStop command]
+	cp skEnter
+	jp z,_evl_enterkey
+	;-- Other keys go between here and jp EventLoop
 	jp EventLoop
-++:	cp skUp      ; -- MOVE TRAIN IN FORWARD DIRECTION
-	jr nz,{+}
-	ld a,DIR_FORWARD
--:	ld (direction),a
-	call UpdateDirection
-	ld hl,_evloop_keywait_and_jumpback \ push hl \ ld hl,(e_updown) \ jp (hl)
-+:	cp skDown   ; -- MOVE TRAIN IN REVERSE DIRECTION
-	jr nz,{+}
-	ld a,DIR_REVERSE
-	jr {-}
-+:	cp skLeft  ; -- DECELERATE TRAIN
-	jr nz,{+}
-	ld b,50
--:	ld a,(throttle)
-	dec a
-	jp m,_evloop_keywait_and_jumpback
-	ld (throttle),a
-	call _evloop_slow_throttle
-	jr nz,{-}
-	jp _evloop_keywait_and_jumpback
-+:	cp skRight ; -- ACCELERATE TRAIN
-	jr nz,{+}
-	ld b,50
--:	ld hl,_evloop_throttlemode_max
-	ld a,(throttlemode)
-	ld e,a
-	ld d,0
-	add hl,de
-	ld a,(throttle)
-	inc a
-	cp (hl)  ;cur-max. nc if exceeds maximum
-	jp nc,_evloop_keywait_and_jumpback
-	ld (throttle),a
-	call _evloop_slow_throttle
-	jr nz,{-}
-	jp _evloop_keywait_and_jumpback
-+:	cp skClear \ ret z  ;REMOVE WHEN DONE TO MAKE APP ENDLESS
-	jp EventLoop
-	
-	
-_evloop_slow_throttle:  ;initial B set outside
-	push bc
-		call UpdateThrottle
-	pop bc
-	djnz _evloop_slow_throttle
-	ld a,(throttle)
-	ld e,a
-	ld a,(throttlemode)
-	ld d,a
-	ld hl,{+}
-	push hl
-	ld hl,(e_updown)
-	jp (hl)
-+:	call kbd.getAnyKey
-	inc a
-	ld b,10
-	ret
 	
 _evloop_keywait_and_jumpback:
 	call kbd.keyWait
 	jp EventLoop
-	
-_evloop_toggleswitch:
-	ld a,(ix+C_FLAGS)
-	xor 1 << C_SWITCHSTATE
-	ld (ix+C_FLAGS),a
-	ret
-_evloop_call_numpad_event:
-	ld hl,(e_numpad)
-	jp (hl)
-	
-_evloop_numpad_table:
-.db sk9,sk8,sk7,sk6,sk5,sk4,sk3,sk2,sk1,$FF,$FF,$FF
-_evloop_throttlemode_max:
-.db 14+1,28+1,128+1
-	
+
+#include "src/ctrl_evt.z80"
 
 ;-----------------------------------------------------------------------------------
 	
@@ -270,7 +178,21 @@ UpdateThrottle:
 	ld ix,232
 	ld hl,(throttle)
 	ld h,0
-	jp _draw7seg3num
+	ld a,(direction)
+	add a,a
+	jp nc, _draw7seg3num
+	push ix
+	pop hl
+	xor a
+	call _draw7seg
+	ld de,8
+	add hl,de
+	ld a,%00011111
+	call _draw7seg
+	ld de,8
+	add hl,de
+	xor a
+	jp _draw7seg
 
 UpdateDirection:
 	ld a,IMGBANK
@@ -434,6 +356,13 @@ _getcurfuncbank:
 	
 	
 UpdateTabs2:
+	ld a,(enableDCmode)
+	rrca
+	ld a,(tabflags)
+	res 3,a
+	jr nc,{+}
+	set 3,a
++:	ld (tabflags),a
 	ld a,(throttlemode)
 	jr {+}
 UpdateTabs:
@@ -461,10 +390,8 @@ DefaultControllerCallback:
 _lbl_init_config:
 	call _lbl_coverup_everything_else
 	ld a,TABBANK
-	out (5),a
-	ld de,$C000
-	ld hl,imgbank3_c ;configbar
-	call dpk.depack
+	ld hl,imgbank3_c
+	call dpk.depackToBank
 	ld a,HELPBANK
 	out (5),a
 	ld hl,169
@@ -487,15 +414,18 @@ _lbl_init_config:
 	ld bc,wh(help4_w,help4_h)
 	ld de,help4_a
 	call gfx.Sprite2BitNoclip
+	;add other active controls in setup which needs to be initialized
+	jp Refresh
 	
+_lbl_init_controller:
+	call _lbl_coverup_everything_else
+	call _lbl_keysprites
+	ld a,TABBANK
+	ld hl,imgbank2_c
+	call dpk.depackToBank
+	call _lbl_throttle_backers
+	jp Refresh
 	
-	
-	
-	
-	jp UpdateTabs2
-
-
-
 _lbl_coverup_everything_else:
 	;covers up throttle (top whole section)
 	ld hl,155
@@ -726,6 +656,8 @@ _7segnumtable:
 
 
 
-.echoln "MODULE CTRL SIZE : ",$-_modulestart
+
+
+.echoln "MODULE ctrl SIZE : ",$-_modulestart
 .endlocal
 .endmodule

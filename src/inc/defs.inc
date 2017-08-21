@@ -26,6 +26,33 @@ allocRtnCount        = 0          ;for keeping track of allocations for routines
 
 allocMem(1,cpage)
 
+allocMem(1,ap_bits)
+allocMem(1,ap_byte)
+allocMem(1,lwm)
+allocMem(1,r_0)
+
+allocMem(2,temp)
+allocMem(1,curbank)
+allocMem(1,throttlemode)   ;0: 0-14, 1: 0-28, 2:0-128
+allocMem(1,throttle)       ;unsigned.
+allocMem(1,direction)      ;0=forward 1=backward -1:emergency stop triggered
+allocMem(1,tabflags)       ;b0=bank1 b1=bank2 [...] b4=[MODE]
+allocMem(2,curaddress)     ;0-32767 (signed 16 bit value, sign unused)
+allocMem(1,addresstype)    ;0=short, 1=long
+allocMem((27*1),bankdata)  ;.db state
+allocMem(2,e_numpad)
+allocMem(2,e_updown)
+allocMem(2,e_leftright)
+allocMem(2,e_cfgack)
+allocMem(2,e_estop)
+allocMem(1,menumode)       ;0=setup, 1=controller
+allocMem(1,enableDCmode)   ;0=disabled 1=DC mode enabled
+
+allocMem(1,gs_keymem)
+
+
+
+
 
 
 IMGBANK  .equ 4

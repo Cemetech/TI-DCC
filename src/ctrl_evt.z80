@@ -1,0 +1,225 @@
+;---
+_evl_fnbanks:
+	ld a,c
+	dec e
+	jr nz,_evl_fnbanks_doconfig
+_evl_fnbanks_docontroller:
+	ld (curbank),a
+	call UpdateKeyLabels
+	call UpdateSwitchState
+	call UpdateSwitchLock
+	call UpdateTabs
+	jp _evloop_keywait_and_jumpback
+_evl_fnbanks_doconfig:
+	ld (throttlemode),a
+	call UpdateTabs2
+	jp _evloop_keywait_and_jumpback
+;---
+_evl_graphkey:
+	dec e
+	jr nz,_evl_graphkey_doconfig
+_evl_graphkey_docontroller:
+	ld a,(tabflags)
+	xor %00010000
+	ld (tabflags),a
+	call UpdateTabs
+	jp _evloop_keywait_and_jumpback
+_evl_graphkey_doconfig:
+	ld a,1
+	ld (menumode),a
+	xor a
+	ld (throttle),a
+	ld (tabflags),a
+	ld a,DIR_ESTOP
+	ld (direction),a
+	; Other state initialization techniques here.
+	call _lbl_init_controller
+	ld a,(addresstype)
+	ld c,a
+	ld a,(enableDCmode)
+	ld b,a
+	ld de,(curaddress)
+	ld hl,_evloop_keywait_and_jumpback \ push hl \ ld hl,(e_cfgack) \ jp (hl)
+;---
+_evl_tracekey:
+	dec e
+	jr nz,_evl_tracekey_doconfig
+_evl_tracekey_docontroller:
+	xor a
+	ld (menumode),a
+	ld (tabflags),a
+	call _lbl_init_config
+	jp _evloop_keywait_and_jumpback
+_evl_tracekey_doconfig:
+	ld a,(enableDCmode)
+	xor 1
+	ld (enableDCmode),a
+	call UpdateTabs2
+	jp _evloop_keywait_and_jumpback
+;---
+_evl_numpad:
+	dec e
+	jr nz,_evl_numpad_doconfig
+_evl_numpad_docontroller:
+	call _getbankaddress
+	ld a,bankdata_size/27
+-:	add ix,bc
+	add hl,bc
+	dec a
+	jr nz,{-}
+	ld a,(tabflags)
+	bit 4,a
+	jr z,_evlnpdctrl_togfn
+;	res 4,a \ ld (tabflags),a
+	ld a,(hl)
+	xor 1 << C_NOTMOMENTARY
+	res C_SWITCHSTATE,a
+	ld (hl),a
+	call UpdateSwitchLock
+	jp _evloop_keywait_and_jumpback
+_evlnpdctrl_togfn:
+	call _evl_np_togswitch
+	call _getcurfuncbank
+	add hl,bc
+	ld c,L
+	ld a,(ix+C_FLAGS)
+	and 1 << C_SWITCHSTATE
+	push bc
+		push ix
+			call _evl_call_npevent
+			call UpdateSwitchState
+		pop ix
+	pop bc
+	bit C_NOTMOMENTARY,(ix+C_FLAGS)
+	jp nz,_evloop_keywait_and_jumpback
+	call kbd.keyWait
+	call _evl_np_togswitch
+	call _evl_call_npevent
+	call UpdateSwitchState
+	jp EventLoop
+_evl_numpad_doconfig:
+	;add in code to do the modify address thing
+	jp _evloop_keywait_and_jumpback
+;---
+_evl_upkey:
+	dec e
+	jr nz,_evl_upkey_doconfig
+_evl_upkey_docontroller:
+	ld a,DIR_FORWARD
+_evl_upkey_docontroller_collect:
+	ld (direction),a
+	push af
+		call UpdateDirection
+		call UpdateThrottle
+	pop af
+	ld hl,_evloop_keywait_and_jumpback \ push hl \ ld hl,(e_updown) \ jp (hl)
+_evl_upkey_doconfig:
+	jp _evloop_keywait_and_jumpback
+;---
+_evl_downkey:
+	dec e
+	jr nz,_evl_downkey_doconfig
+_evl_downkey_docontroller:
+	ld a,DIR_REVERSE
+	jr _evl_upkey_docontroller_collect
+_evl_downkey_doconfig:
+	jp _evloop_keywait_and_jumpback
+;---
+_evl_leftkey:
+	dec e
+	jr nz,_evl_leftkey_doconfig
+_evl_leftkey_docontroller:
+	ld a,(direction)
+	add a,a
+	jp c,_evloop_keywait_and_jumpback
+	ld a,(throttle)
+	dec a
+	jp m,_evloop_keywait_and_jumpback
+	ld (throttle),a
+	call _evl_hold_throttle
+	jr nz,_evl_leftkey_docontroller
+	jp _evloop_keywait_and_jumpback
+_evl_leftkey_doconfig:
+	jp _evloop_keywait_and_jumpback
+;---
+_evl_rightkey:
+	dec e
+	jr nz,_evl_rightkey_doconfig
+_evl_rightkey_docontroller:
+	ld a,(direction)
+	add a,a
+	jp c,_evloop_keywait_and_jumpback
+	ld hl,_evl_throttlemaxtable
+	ld de,(throttlemode)
+	ld d,0
+	add hl,de
+	ld a,(throttle)
+	inc a
+	cp (hl)
+	jp nc,_evloop_keywait_and_jumpback
+	ld (throttle),a
+	call _evl_hold_throttle
+	jr nz,_evl_rightkey_docontroller
+	jp _evloop_keywait_and_jumpback
+_evl_rightkey_doconfig:
+	jp _evloop_keywait_and_jumpback
+;---
+_evl_enterkey:
+	ld a,DIR_ESTOP
+	ld (direction),a
+	xor a
+	ld (throttle),a
+	call UpdateDirection
+	call UpdateThrottle
+	ld hl,_evloop_keywait_and_jumpback \ push hl \ ld hl,(e_estop) \ jp (hl)
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+_evl_tabtable:
+.db skZoom,skWindow,skYequ,$FF
+
+_evl_nptable:
+.db sk9,sk8,sk7,sk6,sk5,sk4,sk3,sk2,sk1,sk0,$FF
+
+_evl_throttlemaxtable:
+.db 14+1,28+1,128+1
+
+_evl_call_npevent:
+	ld hl,(e_numpad)
+	jp (hl)
+	
+_evl_np_togswitch:
+	ld a,(ix+C_FLAGS)
+	xor 1 << C_SWITCHSTATE
+	ld (ix+C_FLAGS),a
+	ret
+
+_evl_hold_throttle:
+	push bc
+		call UpdateThrottle
+	pop bc
+	djnz _evl_hold_throttle
+	ld a,(throttle)
+	ld e,a
+	ld a,(throttlemode)
+	ld d,a
+	ld hl,{+}
+	push hl
+	ld hl,(e_updown)
+	jp (hl)
++:	call kbd.getAnyKey
+	inc a
+	ld b,10
+	ret
+	
