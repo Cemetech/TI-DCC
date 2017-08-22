@@ -2,7 +2,9 @@
 .local
 _modulestart:
 
-
+;
+;All of these routines were pulled off out z80bits, modified for use.
+;
 
 ;in:   E=multiplier H=multiplicand
 ;out:  HL=product

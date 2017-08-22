@@ -6,7 +6,7 @@ _modulestart:
 depackToBank:
 	out (5),a
 	ld de,$C000
-	jp depack
+	jr depack
 
 ;APACK, ported by Dwedit (I think. Correct me if I'm wrong)
 ;depack: HL = source , DE = dest

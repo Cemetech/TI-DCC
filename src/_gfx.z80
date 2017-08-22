@@ -121,33 +121,6 @@ Sprite2BitNoclip:  ;HL=X, A=Y, C=width-1, B=height-1, DE=spriteaddr
 	jp nz,{--}
 	ret
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	srl b
-	rr  c
-	inc b
-	jr nc,{+}
--: 	ld a,(de)
-	inc de
-	out ($11),a
-	out ($11),a
-+:  ld a,(de)
-	inc de
-	out ($11),a
-	out ($11),a
-	dec c
-	jp nz,{-}
-	djnz {-}
-	ret
-	
-	
 ;------------------
 _setrectregion: ;HL=X, A=Y, C=width-1, B=height-1
 ;note: 50=Ymin 51=Ymax 52=Xmin 53=Xmax
@@ -168,10 +141,10 @@ _setrectregion: ;HL=X, A=Y, C=width-1, B=height-1
 	inc a
 	ld d,b
 	add hl,de
-	call _setlcdreg
+	call _setlcdreg  ;Ymax
 	ld a,$20
 	ld hl,0
-	jp _setlcdreg    ;Ymax
+	jp _setlcdreg    ;reset cursor by writing to curX in origin mode
 ;------------------
 
 SetLcdWindowFull:
@@ -198,6 +171,12 @@ _setlcdreg:
 	out (c),h
 	out (c),l
 	ret 
+	
+;------------------
+
+	
+
+
 
 
 .echoln "MODULE gfx  SIZE : ",$-_modulestart

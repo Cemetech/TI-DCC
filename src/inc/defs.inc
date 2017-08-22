@@ -54,7 +54,12 @@ allocMem(2,e_estop)
 ;---
 ;insert any new events for ctrl.z80 here.
 ;---
+allocMem(2,segcolors)
+allocMem(1,curcolor)
 allocMem(2,e_nullevent)
+allocMem(2,xtemp)
+allocMem(2,atemp)
+allocMem(1,ytemp)
 
 allocMem(1,gs_keymem)
 
@@ -73,7 +78,11 @@ HELPBANK .equ 6
 .define XLC_DARKRED $20
 .define XLC_DARKBLUE $08
 .define XLC_DARKGREEN $01
+.define XLC_DARKYELLOW $41
 .define XLC_WHITE $FF
 .define XLC_SEGBLUE $17
 .define XLC_SEGRED $E0
+.define XLC_SEGGREEN $66
+.define XLC_SEGAMBER $E6
+
 

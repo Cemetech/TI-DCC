@@ -1,6 +1,9 @@
 .module ctrl
 .local
 _modulestart:
+
+#define keypad_collect(x,y,rtn) call _kpad_subrcollect \.dw x,rtn \.db y
+
 ;
 ; This is the dashboard component to the application. This is what drives and
 ; maintains the appearance of the DCC controller
@@ -62,6 +65,8 @@ Initialize:
 	ld (hl),d
 	inc hl
 	djnz {-}
+	ld hl,(256*XLC_DARKRED)+XLC_SEGRED
+	ld (segcolors),hl
 	call _lbl_address_backers
 	jp _lbl_init_config
 
@@ -126,6 +131,9 @@ EventLoop:
 	;-- Clear key [config: clears address, control: --]
 	cp skClear
 	jp z,_evl_clearkey
+	;-- Sin key [cycle colors of 7-segment display]
+	cp skSin
+	jp z,_evl_sinkey
 	;-- Other keys go between here and jp EventLoop
 	
 	
@@ -219,12 +227,8 @@ UpdateAddress:
 		pop de
 +++	pop bc
 	djnz {-}
-	
-	
-	
-	
 _upadr_numtable:
-.dw -10000
+.dw -10000  ;consists of ret c \ ret p, the latter always takes due to how the loop exits
 .dw -1000
 .dw -100
 .dw -10
@@ -280,8 +284,6 @@ _drawarrowuploc:   ;DE = arrow sprite address
 	jp gfx.SpriteNoClip
 	
 UpdateKeyLabels:
-	ld a,IMGBANK
-	out (5),a
 	ld a,(curbank)
 	ld e,a
 	ld h,fnums_w
@@ -293,106 +295,54 @@ UpdateKeyLabels:
 	add hl,de
 	push hl
 	pop ix
-	ld e,184
-	ld c,3
---:	ld b,3
-	ld hl,102
--:	call _drawkeylabels  ;internal: add hl,46
-	djnz {-}
-	ld a,e
-	sub 47
-	ld e,a
-	dec c
-	jr nz,{--}
-	ret
+	keypad_collect(102,184,_drawkeylabels)
+
 _drawkeylabels:
-	push bc
-		push de
-			push hl
-				ld a,e
-				ld bc,wh(fnums_w,(fnums_h/27))
-				push ix
-				pop de
-				call gfx.SpriteNoClip
-				ld de,fnums_w*(fnums_h/27)
-				add ix,de
-			pop hl
-			ld de,46
-			add hl,de
+	push hl
+		ld a,e
+		ld bc,wh(fnums_w,(fnums_h/27))
+		push ix
 		pop de
-	pop bc
+		call gfx.SpriteNoClip
+		ld de,fnums_w*(fnums_h/27)
+		add ix,de
+	pop hl
 	ret
 	
 UpdateSwitchState:
 	call _getbankaddress
-	ld e,173
-	ld c,3
---:	ld b,3
-	ld hl,107
--:	call _drawswitchleds  ;internal: add hl,46
-	djnz {-}
-	ld a,e
-	sub 47
-	ld e,a
-	dec c
-	jr nz,{--}
-	ret
+	keypad_collect(107,173,_drawswitchleds)
 _drawswitchleds:
-	push bc
-		push de
-			push hl
-				ld a,e
-				ld bc,wh(13,4)
-				ld d,XLC_RED
-				bit C_SWITCHSTATE,(ix+C_FLAGS)
-				jr z,{+}
-				ld d,XLC_GREEN
-+:				call gfx.FillRect
-				ld de,bankdata_size/27
-				add ix,de
-			pop hl
-			ld de,46
-			add hl,de
-		pop de
-	pop bc
+	push hl
+		ld a,e
+		ld bc,wh(13,4)
+		ld d,XLC_RED
+		bit C_SWITCHSTATE,(ix+C_FLAGS)
+		jr z,{+}
+		ld d,XLC_GREEN
++:		call gfx.FillRect
+		ld de,bankdata_size/27
+		add ix,de
+	pop hl
 	ret
 	
 UpdateSwitchLock:
-	ld a,IMGBANK
-	out (5),a
 	call _getbankaddress
-	ld e,198
-	ld c,3
---:	ld b,3
-	ld hl,109
--:	call _drawlockstatus  ;internal: add hl,46
-	djnz {-}
-	ld a,e
-	sub 47
-	ld e,a
-	dec c
-	jr nz,{--}
-	ret
+	keypad_collect(109,198,_drawlockstatus)
 _drawlockstatus:
-	push bc
-		push de
-			push hl
-				ld a,e
-				ld bc,wh(lock_w,lock_h)
-				bit C_NOTMOMENTARY,(ix+C_FLAGS)
-				jr nz,{+}
-				ld d,XLC_WHITE
-				call gfx.FillRect
-				jr {++}
-+:				ld de,lock_a
-				call gfx.SpriteNoClip
-++:				ld de,bankdata_size/27
-				add ix,de
-			pop hl
-			ld de,46
-			add hl,de
-		pop de
-	pop bc
+	push hl
+		ld a,e
+		ld bc,wh(lock_w,lock_h)
+		bit C_NOTMOMENTARY,(ix+C_FLAGS)
+		jr nz,{+}
+		ld d,XLC_WHITE
+		call gfx.FillRect
+		jr {++}
++:		ld de,lock_a
+		call gfx.SpriteNoClip
+++:		ld de,bankdata_size/27
+		add ix,de
+	pop hl
 	ret
 	
 _getbankaddress:
@@ -440,6 +390,48 @@ UpdateTabs:
 	
 DefaultControllerCallback:
 	ret
+	
+	
+	
+	
+	
+	
+	
+;-------------------------------------------------------------------------
+	
+_kpad_subrcollect:
+	ld a,IMGBANK
+	out (5),a
+	pop hl
+	ld de,xtemp
+	ld bc,5
+	ldir
+	ld a,(ytemp)
+	ld e,a
+	ld c,3
+--:	ld b,3
+	ld hl,(xtemp)
+-:	push bc
+		push de
+			push hl
+				ld hl,{+}
+				ex (sp),hl
+				push hl
+					ld hl,(atemp)
+					ex (sp),hl
+				ret
++:			ld de,46
+			add hl,de
+		pop de
+	pop bc
+	djnz {-}
+	ld a,e
+	sub 47
+	ld e,a
+	dec c
+	jr nz,{--}
+	ret
+	
 	
 ;=============================================================================
 ; Backing initializations
@@ -554,41 +546,15 @@ _lbl_backer_segments:
 	ret
 
 _lbl_keysprites:
-	ld a,IMGBANK
-	out (5),a
-	ld hl,93
-	ld c,3
---:	ld b,3
-	ld e,85
--:	push bc
-		push de
-			push hl
-				ld a,e
-				ld bc,wh(numpadbutton_w,numpadbutton_h)
-				ld de,numpadbutton_a
-				call gfx.SpriteNoClip
-			pop hl
-		pop de
-		push de
-			push hl
-				ld bc,14
-				add hl,bc
-				ld a,-6
-				add a,e
-				ld bc,wh(13,4)
-				ld d,XLC_LIGHTGRAY
-				call gfx.FillRect
-			pop hl
-		pop de
-	pop bc
-	ld a,e
-	add a,47
-	ld e,a
-	djnz {-}
-	ld de,46
-	add hl,de
-	dec c
-	jr nz,{--}
+	keypad_collect(93,179,_drawkeysprite)
+	
+_drawkeysprite:
+	push hl
+		ld a,e
+		ld bc,wh(numpadbutton_w,numpadbutton_h)
+		ld de,numpadbutton_a
+		call gfx.SpriteNoClip
+	pop hl
 	ret
 
 ;=============================================================================
@@ -626,14 +592,14 @@ _draw7seg:
 	ld bc,wh(4,16)
 	ld e,45
 _drawseg:  ;HL=X, BC=WH, E=Y
-	rrca
-	ld d,XLC_DARKRED
-	jr nc,{+}
-	ld d,XLC_SEGRED
-+:	push hl
+	push hl
+		rrca
 		push af
 			ld a,e
-			call gfx.FillRect
+			ld de,(segcolors)
+			jr nc,{+}
+			ld d,e
++:			call gfx.FillRect
 		pop af
 	pop hl
 	ret

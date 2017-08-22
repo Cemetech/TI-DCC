@@ -230,8 +230,34 @@ _evl_clearkey_doconfig:
 	ld (curaddress),hl
 	ld (dispDigits),a
 	jp _evloop_keywait_and_jumpback
+;---
+_evl_sinkey:
+	ld a,(curcolor)
+	inc a
+	and %00000011
+	ld (curcolor),a
+	add a,a
+	ld hl,_evl_sinkey_table
+	add a,L
+	ld L,a
+	jr nc,$+3
+	inc h
+	ld a,(hl)
+	inc hl
+	ld h,(hl)
+	ld L,a
+	ld (segcolors),hl
+	call UpdateAddress
+	ld a,(menumode)
+	dec a
+	call z,UpdateThrottle
+	jp _evloop_keywait_and_jumpback
 	
-	
+_evl_sinkey_table:
+.db XLC_SEGRED,XLC_DARKRED
+.db XLC_SEGBLUE,XLC_DARKBLUE
+.db XLC_SEGGREEN,XLC_DARKGREEN
+.db XLC_SEGAMBER,XLC_DARKYELLOW
 	
 	
 

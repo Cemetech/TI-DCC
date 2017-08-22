@@ -20,8 +20,6 @@ getAnyKey:
 	pop af
 	ret
 
-
-
 _kwdelay:
     ex (sp),hl
     ex (sp),hl
