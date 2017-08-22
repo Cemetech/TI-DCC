@@ -2,14 +2,14 @@
 .local
 _modulestart:
 
+;input: A=ramBank HL=source
+depackToBank:
+	out (5),a
+	ld de,$C000
+	jr depack
 
 ;APACK, ported by Dwedit (I think. Correct me if I'm wrong)
 ;depack: HL = source , DE = dest
-allocMem(1,ap_bits)
-allocMem(1,ap_byte)
-allocMem(1,lwm)
-allocMem(1,r_0)
-
 
 ap_getbit:
  push bc

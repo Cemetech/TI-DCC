@@ -86,14 +86,22 @@ def img2cse(infile):
       o.append(rgb2xlc(i[(y*w)+x]))
   return (w,h,o)
   
-  
-def packimg(infile,flushtofile=''):
+def img2bw(infile):
+  f = Image.open(np(infile))
+  fc = f.convert('1',dither=Image.NONE)
+  fd = fc.tobytes()
+  fd = [ord(i) for i in fd]
+  w = f.size[0]
+  h = f.size[1]
+  return (w,h,fd)
+    
+def packimg(infile,flushtofile='',bw=''):
   global curptr
   global outarr
   
   if infile:
     fname = se(bn(infile))[0]
-    img = img2cse(infile)
+    img = img2bw(infile) if bw else img2cse(infile) 
     outarr.extend(img[2])
     with open("obj/sprites.inc","ab") as f:
       f.write(fname+"_a .equ $"+format(curptr,"04X")+"\n"+
@@ -119,10 +127,10 @@ def packimg(infile,flushtofile=''):
 silentremove("obj/sprites.inc")
 silentremove("obj/sprites.z80")
 
-packimg("src/gfx/address.png")
-packimg("src/gfx/throttle.png")
+packimg("src/gfx/address.png",'','1')
+packimg("src/gfx/throttle.png",'','1')
 packimg("src/gfx/lock.png")
-packimg("src/gfx/numpadbutton.png")
+packimg("src/gfx/numpadbutton.png",'','1')
 packimg("src/gfx/fnums.png")
 packimg("src/gfx/uparrowon.png")
 packimg("src/gfx/uparrowoff.png")
@@ -131,6 +139,13 @@ packimg("src/gfx/downarrowoff.png")
 packimg("","imgbank1.bin")
 packimg("src/gfx/tabs.png")
 packimg("","imgbank2.bin")
+packimg("src/gfx/tabs2.png")
+packimg("","imgbank3.bin")
+packimg("src/gfx/help1.png",'','1')
+packimg("src/gfx/help2.png",'','1')
+packimg("src/gfx/help3.png",'','1')
+packimg("src/gfx/help4.png",'','1')
+packimg("","imgbank4.bin")
 
 
 

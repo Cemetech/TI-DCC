@@ -20,8 +20,6 @@ getAnyKey:
 	pop af
 	ret
 
-
-
 _kwdelay:
     ex (sp),hl
     ex (sp),hl
@@ -34,7 +32,7 @@ _kwdelay:
 ;  - A: Keycode
 ; Destroys:
 ;  - AF
-allocMem(1,gs_keymem)
+
 gsGetK:
 gsGetCSC:
 	push hl
@@ -90,6 +88,8 @@ only1key:
 		pop de
 	pop hl
 	ret
+	
+	
 .echoln "MODULE kbd  SIZE : ",$-_modulestart
 .endlocal
 .endmodule

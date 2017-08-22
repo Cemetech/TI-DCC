@@ -74,7 +74,9 @@ SpriteNoclip:  ;HL=X, A=Y, C=width-1, B=height-1, DE=spriteaddr
 	srl b
 	rr  c
 	inc b
-	jr nc,{+}
+	inc bc
+	jr c,{+}
+	dec bc
 -: 	ld a,(de)
 	inc de
 	out ($11),a
@@ -87,6 +89,40 @@ SpriteNoclip:  ;HL=X, A=Y, C=width-1, B=height-1, DE=spriteaddr
 	jp nz,{-}
 	djnz {-}
 	ret
+	
+;------------------
+;NOTE: SPRITE IS ASSUMED TO BE IN CURRENT MEMORY BANK ON INVOCATION
+Sprite2BitNoclip:  ;HL=X, A=Y, C=width-1, B=height-1, DE=spriteaddr
+	push de
+		push bc
+			call _setrectregion
+		pop de
+		inc e
+		inc d
+		srl e \ srl e \ srl e  ;width must be multiple of 8 so this is good.
+		ld h,d
+		call math.multEandH
+		ld a,$22
+		out ($10),a
+		out ($10),a         ;set LCD write mode
+	pop de
+--:	ld a,(de)
+	inc de
+	ld c,a
+	ld b,8
+-:	rlc c
+	ld a,XLC_DARKGRAY
+	jr nc,{+}
+	ld a,XLC_WHITE
++:	out ($11),a
+	out ($11),a
+	djnz {-}
+	dec hl
+	ld a,L
+	or H
+	jp nz,{--}
+	ret
+	
 ;------------------
 _setrectregion: ;HL=X, A=Y, C=width-1, B=height-1
 ;note: 50=Ymin 51=Ymax 52=Xmin 53=Xmax
@@ -107,10 +143,10 @@ _setrectregion: ;HL=X, A=Y, C=width-1, B=height-1
 	inc a
 	ld d,b
 	add hl,de
-	call _setlcdreg
+	call _setlcdreg  ;Ymax
 	ld a,$20
 	ld hl,0
-	jp _setlcdreg    ;Ymax
+	jp _setlcdreg    ;reset cursor by writing to curX in origin mode
 ;------------------
 
 SetLcdWindowFull:
@@ -137,6 +173,12 @@ _setlcdreg:
 	out (c),h
 	out (c),l
 	ret 
+	
+;------------------
+
+	
+
+
 
 
 .echoln "MODULE gfx  SIZE : ",$-_modulestart

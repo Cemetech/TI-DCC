@@ -1,0 +1,166 @@
+        BIT 0,(IX+N)            ; DD CB XX 46 01000110
+        BIT 1,(IX+N)            ; DD CB XX 4E 01001110
+        BIT 2,(IX+N)            ; DD CB XX 56 01010110
+        BIT 3,(IX+N)            ; DD CB XX 5E 01011110
+        BIT 4,(IX+N)            ; DD CB XX 66
+        BIT 5,(IX+N)            ; DD CB XX 6E
+        BIT 6,(IX+N)            ; DD CB XX 76
+        BIT 7,(IX+N)            ; DD CB XX 7E
+		
+;-------------------------------------------------
+	ld ix,(dccState.msgPTR)  ;20
+	ld a,(bitcount)          ;13
+	ld b,a                   ;4
+	add a,a                  ;4
+	add a,a                  ;4
+	add a,a                  ;4
+	and %00111000            ;7
+	or  %01000110            ;7
+	ld (int_ix_smc+3),a      ;13
+	ld a,b                   ;4
+	rrca \ rrca \ rrca       ;12
+	and %00000111            ;7
+	ld (int_ix_smc+2),a      ;13
+int_ix_smc:                  ;
+	bit 0,(ix+0)  ;SMCd      ;20
+;-------------------------------------------------
+	;transmit bit. Z=bit was 0. NZ=bit was 1.
+	;total 132cc
+	
+	ld a,(bitcount)
+	rrca
+	rrca
+	rrca
+	ld b,a
+	and %00000111
+	ld (int_ix_smc+2),a  ;[210]76543. Next req 43[210]765
+	rrca
+	rrca
+	and %00111000
+	or  %01000110
+	ld (int_ix_smc+3),a
+	
+	
+	
+	ld b,a
+	rrca
+	rrca
+	rrca
+	and %11111000
+	add a,L
+	ld L,a
+	jr nc,$+3
+	inc h
+	ld a,b
+    and %00000111
+	ld b,a
+	ld a,1     ;81
+	jr z,$+5   ;best case  93
+	add a,a    ;worst case 207
+	djnz $-1   ;
+	and (hl)   ;100/214
+	
+	
+	;with LUT
+	
+	
+	;PROGRAMLUT is assumed to be 256-byte aligned, 512 bytes long.
+	ld hl,(dccState.msgPTR)
+	ld a,(bitcount)
+	ld e,a
+	ld d,PROGRAMLUT>>8
+	ld a,(de) \	inc d  ;First LUT is: for(i=0;i<256;i++) arr1[i] = (i>>3)&7;
+	add a,L
+	ld L,a
+	jr nc,$+3
+	inc h
+	ld a,(de)          ;Second LUT is: for(i=0;i<256;i++) arr2[i] = 1<<((~i)&7);
+	and (hl)
+	
+	inc d
+	ld e,a
+	ld a,(de)
+	
+	
+genLUT:  ;in: DE=starting address. Must be 256-byte aligned.
+	ld a,e
+	rrca \ rrca \ rrca
+	and 7
+	ld (de),a
+	ld a,e
+	inc d
+	cpl
+	and 7
+	ld b,a
+	ld c,0
+	ld a,1
+	jr z,{+}
+-:	scf \ rl c
+	rlca
+	djnz {-}
++:	ld (de),a
+	inc d
+	ld a,c
+	ld (de),a
+	dec d
+	dec d
+	inc e
+	jr nz,genLUT
+	ret
+	
+;E = bitpos to insert
+;C=0 to insert 0, C=$FF to insert 1. Destroys all registers
+insertBit:  
+	ld hl,(dccState.msgPTR)
+	ld d,PROGRAMLUT>>8
+	ld a,(de)
+	inc d       ;First LUT is: for(i=0;i<256;i++) arr1[i] = (i>>3)&7;
+	add a,L
+	ld L,a
+	jr nc,$+3
+	inc h       ;get address we need to perform insert op on
+	inc c
+	ld a,(de)   ;fetch masking bit. for(i=0;i<256;i++) arr2[i] = 1<<((~i)&7);
+	jr z,insertBit1
+insertBit0:
+	cpl
+	and (hl)    ;clear bit.
+	ld (hl),a
+	jr insertBitCont
+insertBit1:
+	or (hl)
+	ld (hl),a   ;set bit
+insertBitCont:
+	inc d       ;Third LUT: Mask to keep bits. 7=%01111111 0=%00000000
+	ld a,(maxbits)
+	inc a
+	ld (maxbits),a
+	sub e       ;maxbits-bitcount
+	rrca
+	rrca
+	rrca
+	and %00011111
+	inc a
+	ld b,a     ;max number of bytes to iterate over
+	ld a,(de)
+	cpl        ;we may have needed those bits reversed. 1's are what we keep with old
+	ld c,a
+	ld a,(hl)
+	rrc (hl)
+	push af   ;keep bit that was pushed out retained
+		xor (hl)  ;mask in old state
+		and c
+		xor (hl)
+		ld (hl),a
+	pop af
+-:	inc hl
+	rr (hl)
+	djnz {-}
+	ret
+	
+	
+	
+	
+
+
+
