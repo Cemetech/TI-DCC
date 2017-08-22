@@ -295,7 +295,7 @@ UpdateKeyLabels:
 	add hl,de
 	push hl
 	pop ix
-	keypad_collect(101,184,_drawkeylabels)
+	keypad_collect(102,184,_drawkeylabels)
 
 _drawkeylabels:
 	ld a,e
@@ -309,7 +309,7 @@ _drawkeylabels:
 	
 UpdateSwitchState:
 	call _getbankaddress
-	keypad_collect(107,173,_drawswitchleds)
+	keypad_collect(108,173,_drawswitchleds)
 _drawswitchleds:
 	ld a,e
 	ld bc,wh(12,4)
@@ -324,7 +324,7 @@ _drawswitchleds:
 	
 UpdateSwitchLock:
 	call _getbankaddress
-	keypad_collect(109,198,_drawlockstatus)
+	keypad_collect(110,198,_drawlockstatus)
 _drawlockstatus:
 	ld a,e
 	ld bc,wh(lock_w,lock_h)
@@ -542,7 +542,7 @@ _lbl_backer_segments:
 	ret
 
 _lbl_keysprites:
-	keypad_collect(93,179,_drawkeysprite)
+	keypad_collect(94,179,_drawkeysprite)
 	
 _drawkeysprite:
 	ld a,e
