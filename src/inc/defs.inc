@@ -38,20 +38,25 @@ allocMem(1,throttle)       ;unsigned.
 allocMem(1,direction)      ;0=forward 1=backward -1:emergency stop triggered
 allocMem(1,tabflags)       ;b0=bank1 b1=bank2 [...] b4=[MODE]
 allocMem(2,curaddress)     ;0-32767 (signed 16 bit value, sign unused)
-allocMem(1,addresstype)    ;0=short, 1=long
 allocMem((27*1),bankdata)  ;.db state
+allocMem(1,menumode)       ;0=setup, 1=controller
+allocMem(1,enableDCmode)   ;0=disabled 1=DC mode enabled
+allocMem(1,dispDigits)
+allocMem(1,cursorcycle)
+;---
+;insert any new normal memory allocs for ctrl.z80 here.
+;---
 allocMem(2,e_numpad)
 allocMem(2,e_updown)
 allocMem(2,e_leftright)
 allocMem(2,e_cfgack)
 allocMem(2,e_estop)
-allocMem(1,menumode)       ;0=setup, 1=controller
-allocMem(1,enableDCmode)   ;0=disabled 1=DC mode enabled
+;---
+;insert any new events for ctrl.z80 here.
+;---
+allocMem(2,e_nullevent)
 
 allocMem(1,gs_keymem)
-
-
-
 
 
 

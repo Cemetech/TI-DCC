@@ -32,13 +32,21 @@ _evl_graphkey_doconfig:
 	ld (tabflags),a
 	ld a,DIR_ESTOP
 	ld (direction),a
-	; Other state initialization techniques here.
 	call _lbl_init_controller
-	ld a,(addresstype)
-	ld c,a
-	ld a,(enableDCmode)
-	ld b,a
-	ld de,(curaddress)
+	ld hl,(curaddress)
+	push hl
+		ld de,128
+		or a
+		ld c,1
+		sbc hl,de  ;if no carry, then is long.
+		jr nc,{+}
+		ld a,(dispDigits)
+		cp 4  ;if no carry, then is long
+		jr nc,{+}
+		dec c ;else is short.
++:		ld a,(enableDCmode)
+		ld b,a
+	pop de
 	ld hl,_evloop_keywait_and_jumpback \ push hl \ ld hl,(e_cfgack) \ jp (hl)
 ;---
 _evl_tracekey:
@@ -98,8 +106,22 @@ _evlnpdctrl_togfn:
 	call UpdateSwitchState
 	jp EventLoop
 _evl_numpad_doconfig:
-	;add in code to do the modify address thing
-	jp _evloop_keywait_and_jumpback
+	ld de,(curaddress)
+	ld a,10
+	call math.multDEandA
+	or a
+	jr nz,{+}
+	ld a,h
+	and %11000000  ;disallow addresses higher than 14 bits
+	jr nz,{+}
+	ld a,(dispDigits)
+	inc a
+	cp 5+1
+	jr z,{+}
+	add hl,bc
+	ld (curaddress),hl
+	ld (dispDigits),a
++:	jp _evloop_keywait_and_jumpback
 ;---
 _evl_upkey:
 	dec e
@@ -164,6 +186,8 @@ _evl_rightkey_docontroller:
 _evl_rightkey_doconfig:
 	jp _evloop_keywait_and_jumpback
 ;---
+;This event can occur regardless of mode.
+;It's called "Emergency Stop" for a reason.
 _evl_enterkey:
 	ld a,DIR_ESTOP
 	ld (direction),a
@@ -172,17 +196,23 @@ _evl_enterkey:
 	call UpdateDirection
 	call UpdateThrottle
 	ld hl,_evloop_keywait_and_jumpback \ push hl \ ld hl,(e_estop) \ jp (hl)
+;---
+_evl_delkey:
+	dec e
+	jr nz,_evl_delkey_doconfig
+_evl_delkey_docontroller:
+	jp _evloop_keywait_and_jumpback
+_evl_delkey_doconfig:
+	ld a,(dispDigits)
+	sub 1
+	adc a,0  ;limits decrement to zero
+	ld (dispDigits),a
+	ld hl,(curaddress)
+	ld c,10
+	call math.divHLandC
+	ld (curaddress),hl
+	jp _evloop_keywait_and_jumpback
 	
-	
-
-
-
-
-
-
-
-
-
 
 
 
@@ -223,3 +253,4 @@ _evl_hold_throttle:
 	ld b,10
 	ret
 	
+

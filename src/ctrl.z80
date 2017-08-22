@@ -49,23 +49,17 @@ DIR_ESTOP   .equ -1
 
 ;------------------------------------------------------------------------------------
 Initialize:
-	xor a
-	ld hl,DefaultControllerCallback
-	ld (e_numpad),hl
-	ld (e_updown),hl
-	ld (e_leftright),hl
-	ld (e_cfgack),hl
-	ld (e_estop),hl
-	ld (curbank),a
-	ld (throttle),a
-	ld (tabflags),a
-	ld (menumode),a
-	ld (enableDCmode),a
-	inc a
-	ld (throttlemode),a
-	ld b,27
-	ld hl,bankdata
--:  ld (hl),0
+	ld hl,temp
+	ld de,temp+1
+	ld bc,(e_numpad-temp)-1
+	ld (hl),$00
+	ldir
+	ld hl,e_numpad
+	ld de,DefaultControllerCallback
+	ld b,(e_nullevent-e_numpad)/2
+-:	ld (hl),e
+	inc hl
+	ld (hl),d
 	inc hl
 	djnz {-}
 	call _lbl_address_backers
@@ -129,8 +123,19 @@ EventLoop:
 	;-- Enter key [config: -- control: eStop command]
 	cp skEnter
 	jp z,_evl_enterkey
+	;- Delete key [config: delete address digit, control: -- ]
+	cp skDel
+	jp z,_evl_delkey
 	;-- Other keys go between here and jp EventLoop
-	jp EventLoop
+	
+	
+	
+	;-- Handling constantly-running service routines 
+	ld a,(menumode)
+	dec a
+	jr z,{+}
+	call UpdateAddress  ;to keep the cursor running in config mode
++:	jp EventLoop
 	
 _evloop_keywait_and_jumpback:
 	call kbd.keyWait
@@ -172,7 +177,55 @@ _drawtabs:  ;C = bitfield for active tabs
 UpdateAddress:
 	ld ix,8
 	ld hl,(curaddress)
-	jp _draw7seg5num
+	ld a,(menumode)
+	dec a
+	jp z,_draw7seg5num
+	res 0,(iy+asm_flag1)
+	ld a,(dispDigits)
+	ld c,a
+	ld b,5
+	ld de,_upadr_numtable
+-:	push bc
+		ld a,b
+		cp c
+		jr nz,{+}
+		set 0,(iy+asm_flag1)
++:		cp 1
+		jr nz,{++}
+		ld a,(cursorcycle)
+		inc a
+		ld (cursorcycle),a
+		and %00100000
+		jr z,{++}
+		push hl
+			push ix
+			pop hl
+			ld a,%00010000
+			call _draw7seg
+		pop hl
+		jr {+++}
+++:		ex de,hl
+		ld c,(hl)
+		inc hl
+		ld b,(hl)
+		inc hl
+		ex de,hl
+		push de
+			call _draw7segDigit
+		pop de
++++	pop bc
+	djnz {-}
+	
+	
+	
+	
+_upadr_numtable:
+.dw -10000
+.dw -1000
+.dw -100
+.dw -10
+.dw -1
+	
 	
 UpdateThrottle:
 	ld ix,232
@@ -533,24 +586,6 @@ _lbl_keysprites:
 	dec c
 	jr nz,{--}
 	ret
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 
 ;=============================================================================
 ; 7-Segment Stuffs 
@@ -614,6 +649,7 @@ _draw7seg5num:  ;IX=Xstart HL=num
 	call {+}
 	ld bc,-1
 	set 0,(iy+asm_flag1)
+_draw7segDigit:
 +:	ld a,-1
 -:	inc a
 	add hl,bc
