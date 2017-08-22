@@ -43,9 +43,9 @@ startApp:
 	ld a,IMGBANK
 	ld hl,imgbank1_c
 	call dpk.depackToBank
-	ld a,HELPBANK
-	ld hl,imgbank4_c
-	call dpk.depackToBank
+;	ld a,HELPBANK
+;	ld hl,imgbank4_c
+;	call dpk.depackToBank
 	;start the fancy work
 	call ctrl.Initialize
 	

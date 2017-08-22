@@ -67,7 +67,7 @@ allocMem(1,gs_keymem)
 
 IMGBANK  .equ 4
 TABBANK  .equ 5
-HELPBANK .equ 6
+HELPBANK .equ 4
 
 .define XLC_BLACK $00
 .define XLC_DARKGRAY $4A
