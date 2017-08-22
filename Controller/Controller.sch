@@ -1,0 +1,212 @@
+EESchema Schematic File Version 2
+LIBS:power
+LIBS:device
+LIBS:transistors
+LIBS:conn
+LIBS:linear
+LIBS:regul
+LIBS:74xx
+LIBS:cmos4000
+LIBS:adc-dac
+LIBS:memory
+LIBS:xilinx
+LIBS:microcontrollers
+LIBS:dsp
+LIBS:microchip
+LIBS:analog_switches
+LIBS:motorola
+LIBS:texas
+LIBS:intel
+LIBS:audio
+LIBS:interface
+LIBS:digital-audio
+LIBS:philips
+LIBS:display
+LIBS:cypress
+LIBS:siliconi
+LIBS:opto
+LIBS:atmel
+LIBS:contrib
+LIBS:valves
+LIBS:LMD18200T
+EELAYER 25 0
+EELAYER END
+$Descr A4 11693 8268
+encoding utf-8
+Sheet 1 1
+Title ""
+Date ""
+Rev ""
+Comp ""
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+$Comp
+L LMD18200T U?
+U 1 1 598F37E3
+P 5850 3400
+F 0 "U?" H 5641 3939 50  0000 L BNN
+F 1 "LMD18200T" H 5665 2492 50  0000 L BNN
+F 2 "DIOB_LMD18200T" H 5850 3400 50  0001 L BNN
+F 3 "H-Bridge DC Motor Driver 11-Pin%2811%2BTab%29 TO-220 Tube" H 5850 3400 50  0001 L BNN
+F 4 "16.46 USD" H 5850 3400 50  0001 L BNN "Price"
+F 5 "Texas Instruments" H 5850 3400 50  0001 L BNN "MF"
+F 6 "Good" H 5850 3400 50  0001 L BNN "Availability"
+F 7 "LMD18200T" H 5850 3400 50  0001 L BNN "MP"
+F 8 "TO-220 Texas Instruments" H 5850 3400 50  0001 L BNN "Package"
+	1    5850 3400
+	1    0    0    -1  
+$EndComp
+$Comp
+L C C?
+U 1 1 598F399B
+P 4150 3100
+F 0 "C?" H 4175 3200 50  0000 L CNN
+F 1 "C" H 4175 3000 50  0000 L CNN
+F 2 "" H 4188 2950 50  0001 C CNN
+F 3 "" H 4150 3100 50  0001 C CNN
+	1    4150 3100
+	0    1    1    0   
+$EndComp
+$Comp
+L C C?
+U 1 1 598F39E1
+P 4150 3600
+F 0 "C?" H 4175 3700 50  0000 L CNN
+F 1 "C" H 4175 3500 50  0000 L CNN
+F 2 "" H 4188 3450 50  0001 C CNN
+F 3 "" H 4150 3600 50  0001 C CNN
+	1    4150 3600
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	3600 3100 4000 3100
+Wire Wire Line
+	4300 3100 4550 3100
+Wire Wire Line
+	4300 3600 4550 3600
+Wire Wire Line
+	3600 3600 4000 3600
+Text Label 3900 3600 2    60   ~ 0
+Track2
+Text Label 3900 3100 2    60   ~ 0
+Track1
+Text Label 7150 3300 0    60   ~ 0
+Track1
+Text Label 7150 3400 0    60   ~ 0
+Track2
+Wire Wire Line
+	7150 3400 7450 3400
+Wire Wire Line
+	7150 3300 7450 3300
+$Comp
+L R R?
+U 1 1 598F3B8D
+P 7500 3600
+F 0 "R?" V 7580 3600 50  0000 C CNN
+F 1 "R" V 7500 3600 50  0000 C CNN
+F 2 "" V 7430 3600 50  0001 C CNN
+F 3 "" H 7500 3600 50  0001 C CNN
+	1    7500 3600
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	7150 3600 7350 3600
+$Comp
+L LED D?
+U 1 1 598F3BD0
+P 7950 3600
+F 0 "D?" H 7950 3700 50  0000 C CNN
+F 1 "LED" H 7950 3500 50  0000 C CNN
+F 2 "" H 7950 3600 50  0001 C CNN
+F 3 "" H 7950 3600 50  0001 C CNN
+	1    7950 3600
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	7650 3600 7800 3600
+$Comp
+L GND #PWR?
+U 1 1 598FAE00
+P 4300 3400
+F 0 "#PWR?" H 4300 3150 50  0001 C CNN
+F 1 "GND" H 4300 3250 50  0000 C CNN
+F 2 "" H 4300 3400 50  0001 C CNN
+F 3 "" H 4300 3400 50  0001 C CNN
+	1    4300 3400
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	4300 3400 4550 3400
+Wire Wire Line
+	4550 3300 3200 3300
+$Comp
+L +5V #PWR?
+U 1 1 598FAED1
+P 4450 3500
+F 0 "#PWR?" H 4450 3350 50  0001 C CNN
+F 1 "+5V" H 4450 3640 50  0000 C CNN
+F 2 "" H 4450 3500 50  0001 C CNN
+F 3 "" H 4450 3500 50  0001 C CNN
+	1    4450 3500
+	0    -1   -1   0   
+$EndComp
+Wire Wire Line
+	4450 3500 4550 3500
+$Comp
+L GND #PWR?
+U 1 1 598FAFBF
+P 4450 4000
+F 0 "#PWR?" H 4450 3750 50  0001 C CNN
+F 1 "GND" H 4450 3850 50  0000 C CNN
+F 2 "" H 4450 4000 50  0001 C CNN
+F 3 "" H 4450 4000 50  0001 C CNN
+	1    4450 4000
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	4450 4000 4550 4000
+$Comp
+L +12V #PWR?
+U 1 1 598FAFEF
+P 4300 3900
+F 0 "#PWR?" H 4300 3750 50  0001 C CNN
+F 1 "+12V" H 4300 4040 50  0000 C CNN
+F 2 "" H 4300 3900 50  0001 C CNN
+F 3 "" H 4300 3900 50  0001 C CNN
+	1    4300 3900
+	0    -1   -1   0   
+$EndComp
+Wire Wire Line
+	4300 3900 4550 3900
+Wire Wire Line
+	7150 3700 7350 3700
+Wire Wire Line
+	7350 3700 7350 4050
+$Comp
+L R R?
+U 1 1 598FCAFD
+P 7350 4200
+F 0 "R?" V 7430 4200 50  0000 C CNN
+F 1 "R" V 7350 4200 50  0000 C CNN
+F 2 "" V 7280 4200 50  0001 C CNN
+F 3 "" H 7350 4200 50  0001 C CNN
+	1    7350 4200
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 598FCB20
+P 7350 4350
+F 0 "#PWR?" H 7350 4100 50  0001 C CNN
+F 1 "GND" H 7350 4200 50  0000 C CNN
+F 2 "" H 7350 4350 50  0001 C CNN
+F 3 "" H 7350 4350 50  0001 C CNN
+	1    7350 4350
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	7350 4050 7900 4050
+$EndSCHEMATC
