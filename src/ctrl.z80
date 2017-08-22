@@ -117,19 +117,23 @@ EventLoop:
 	;-- Right key [config: -- control: Accelerate train]
 	cp skRight
 	jp z,_evl_rightkey
-	;-- Clear key [exit event loop]
-	cp skClear
-	ret z
 	;-- Enter key [config: -- control: eStop command]
 	cp skEnter
 	jp z,_evl_enterkey
 	;- Delete key [config: delete address digit, control: -- ]
 	cp skDel
 	jp z,_evl_delkey
+	;-- Clear key [config: clears address, control: --]
+	cp skClear
+	jp z,_evl_clearkey
 	;-- Other keys go between here and jp EventLoop
 	
 	
 	
+	
+	;-- Math key [exit event loop]
+	cp skMath
+	ret z
 	;-- Handling constantly-running service routines 
 	ld a,(menumode)
 	dec a
@@ -512,7 +516,7 @@ _lbl_throttle_backers:
 	ld a,4  
 	ld bc,wh(throttle_w,throttle_h) 
 	ld de,throttle_a
-	call gfx.SpriteNoClip
+	call gfx.Sprite2BitNoclip
 	ld hl,228
 	ld a,17
 	ld bc,wh(88,52)
@@ -529,7 +533,7 @@ _lbl_address_backers:
 	ld a,4
 	ld bc,wh(address_w,address_h)
 	ld de,address_a
-	call gfx.SpriteNoClip
+	call gfx.Sprite2BitNoclip
 	ld hl,4
 	ld a,17
 	ld bc,wh(144,52)

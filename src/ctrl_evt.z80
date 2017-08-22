@@ -212,10 +212,25 @@ _evl_delkey_doconfig:
 	call math.divHLandC
 	ld (curaddress),hl
 	jp _evloop_keywait_and_jumpback
+;---
+_evl_clearkey:
+	dec e
+	jr nz,_evl_clearkey_doconfig
+_evl_clearkey_docontroller:
+	jp _evloop_keywait_and_jumpback
+_evl_clearkey_doconfig:
+	xor a
+	ld L,a
+	ld H,a
+	ld (curaddress),hl
+	ld (dispDigits),a
+	jp _evloop_keywait_and_jumpback
+	
+	
+	
 	
 
-
-
+;----------------------------------------------------------------------------
 _evl_tabtable:
 .db skZoom,skWindow,skYequ,$FF
 

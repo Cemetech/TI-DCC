@@ -127,8 +127,8 @@ def packimg(infile,flushtofile='',bw=''):
 silentremove("obj/sprites.inc")
 silentremove("obj/sprites.z80")
 
-packimg("src/gfx/address.png")
-packimg("src/gfx/throttle.png")
+packimg("src/gfx/address.png",'','1')
+packimg("src/gfx/throttle.png",'','1')
 packimg("src/gfx/lock.png")
 packimg("src/gfx/numpadbutton.png")
 packimg("src/gfx/fnums.png")
