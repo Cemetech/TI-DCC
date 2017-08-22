@@ -63,6 +63,8 @@ startApp:
 	ld hl,doNothing
 	ld (e_cfgack),hl    ;when user pushes OK on config screen
 	
+	ld hl,doNothing
+	ld (e_estop),hl     ;when user pushes Enter to trigger eStop
 	
 	; ******** END EXAMPLE SET UP CODE *********
 	call ctrl.EventLoop
