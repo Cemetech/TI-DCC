@@ -25,11 +25,16 @@ _evl_graphkey_docontroller:
 	call UpdateTabs
 	jp _evloop_keywait_and_jumpback
 _evl_graphkey_doconfig:
-	ld a,1
-	ld (menumode),a
 	xor a
 	ld (throttle),a
 	ld (tabflags),a
+	ld hl,bankdata
+	ld de,bankdata+1
+	ld bc,bankdata_size-1
+	ld (hl),a
+	ldir
+	ld a,1
+	ld (menumode),a
 	ld a,DIR_ESTOP
 	ld (direction),a
 	call _lbl_init_controller
