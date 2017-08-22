@@ -119,11 +119,13 @@ _evl_numpad_doconfig:
 	ld a,h
 	and %11000000  ;disallow addresses higher than 14 bits
 	jr nz,{+}
+	add hl,bc
+	bit 6,h
+	jr nz,{+}  ;check to see if final digit input nudged over the limit
 	ld a,(dispDigits)
 	inc a
 	cp 5+1
 	jr z,{+}
-	add hl,bc
 	ld (curaddress),hl
 	ld (dispDigits),a
 +:	jp _evloop_keywait_and_jumpback
