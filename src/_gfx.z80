@@ -74,7 +74,9 @@ SpriteNoclip:  ;HL=X, A=Y, C=width-1, B=height-1, DE=spriteaddr
 	srl b
 	rr  c
 	inc b
-	jr nc,{+}
+	inc bc
+	jr c,{+}
+	dec bc
 -: 	ld a,(de)
 	inc de
 	out ($11),a

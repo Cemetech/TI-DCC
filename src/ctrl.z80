@@ -295,54 +295,48 @@ UpdateKeyLabels:
 	add hl,de
 	push hl
 	pop ix
-	keypad_collect(102,184,_drawkeylabels)
+	keypad_collect(101,184,_drawkeylabels)
 
 _drawkeylabels:
-	push hl
-		ld a,e
-		ld bc,wh(fnums_w,(fnums_h/27))
-		push ix
-		pop de
-		call gfx.SpriteNoClip
-		ld de,fnums_w*(fnums_h/27)
-		add ix,de
-	pop hl
+	ld a,e
+	ld bc,wh(fnums_w,(fnums_h/27))
+	push ix
+	pop de
+	call gfx.SpriteNoClip
+	ld de,fnums_w*(fnums_h/27)
+	add ix,de
 	ret
 	
 UpdateSwitchState:
 	call _getbankaddress
 	keypad_collect(107,173,_drawswitchleds)
 _drawswitchleds:
-	push hl
-		ld a,e
-		ld bc,wh(13,4)
-		ld d,XLC_RED
-		bit C_SWITCHSTATE,(ix+C_FLAGS)
-		jr z,{+}
-		ld d,XLC_GREEN
-+:		call gfx.FillRect
-		ld de,bankdata_size/27
-		add ix,de
-	pop hl
+	ld a,e
+	ld bc,wh(12,4)
+	ld d,XLC_RED
+	bit C_SWITCHSTATE,(ix+C_FLAGS)
+	jr z,{+}
+	ld d,XLC_GREEN
++:	call gfx.FillRect
+	ld de,bankdata_size/27
+	add ix,de
 	ret
 	
 UpdateSwitchLock:
 	call _getbankaddress
 	keypad_collect(109,198,_drawlockstatus)
 _drawlockstatus:
-	push hl
-		ld a,e
-		ld bc,wh(lock_w,lock_h)
-		bit C_NOTMOMENTARY,(ix+C_FLAGS)
-		jr nz,{+}
-		ld d,XLC_WHITE
-		call gfx.FillRect
-		jr {++}
-+:		ld de,lock_a
-		call gfx.SpriteNoClip
-++:		ld de,bankdata_size/27
-		add ix,de
-	pop hl
+	ld a,e
+	ld bc,wh(lock_w,lock_h)
+	bit C_NOTMOMENTARY,(ix+C_FLAGS)
+	jr nz,{+}
+	ld d,XLC_WHITE
+	call gfx.FillRect
+	jr {++}
++:	ld de,lock_a
+	call gfx.SpriteNoClip
+++:	ld de,bankdata_size/27
+	add ix,de
 	ret
 	
 _getbankaddress:
@@ -414,13 +408,15 @@ _kpad_subrcollect:
 -:	push bc
 		push de
 			push hl
-				ld hl,{+}
-				ex (sp),hl
 				push hl
-					ld hl,(atemp)
+					ld hl,{+}
 					ex (sp),hl
-				ret
-+:			ld de,46
+					push hl
+						ld hl,(atemp)
+						ex (sp),hl
+					ret
++:			pop hl
+			ld de,46
 			add hl,de
 		pop de
 	pop bc
@@ -549,12 +545,10 @@ _lbl_keysprites:
 	keypad_collect(93,179,_drawkeysprite)
 	
 _drawkeysprite:
-	push hl
-		ld a,e
-		ld bc,wh(numpadbutton_w,numpadbutton_h)
-		ld de,numpadbutton_a
-		call gfx.SpriteNoClip
-	pop hl
+	ld a,e
+	ld bc,wh(numpadbutton_w,numpadbutton_h)
+	ld de,numpadbutton_a
+	call gfx.Sprite2BitNoClip
 	ret
 
 ;=============================================================================

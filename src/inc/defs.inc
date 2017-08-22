@@ -83,6 +83,6 @@ HELPBANK .equ 6
 .define XLC_SEGBLUE $17
 .define XLC_SEGRED $E0
 .define XLC_SEGGREEN $66
-.define XLC_SEGAMBER $E6
+.define XLC_SEGAMBER $E5
 
 
