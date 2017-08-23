@@ -282,65 +282,71 @@ _setReverse28:
     
 _128Speed:
     ;Handle the sane speed packet
-    ;need to implement 4byte packets first though so 
+    ;need to implement 4/5byte packets first though so 
     ;ABORT
     ret
     
 handleFunction:
     ret
     
-dccSendShortSpeed:  ;in b,%01DCSSSS a,address c,repeat
+PreparePacket:
+    ;In e,amount of bytes in packet
+    ;packetGenScratch packet bytes
+    ld b,e                 ;save bytes in structure
+    sla e \ sla e \ sla e  ; *8 == bitcount
+    dec b                  ;ASSUME first byte is part of the preamble and gets no seperator
+                           ; we loop from packet end
+    ld hl,packetGenScratch  
+    ld c,$FF
+_PreparepacketLoop:
+    push de
+        push bc
+            push hl             ;Move in 8bits and insert next bit
+                call insertBit  ;Call insert bits saving all registers
+            pop hl
+        pop bc
+    pop de
+    ld a,e
+    sub 8
+    ld e,a            ;Move to next byte
+    ld c,0              ;Set c to insert 0 bits
+    djnz _dccPreparepacketLoop
+    ret
+    
+dccSendShort3byte:  ;in b,data a,address c,repeat
     di
-    ld (packetGenScratch+3),a      ;Save Address
+    ld (packetGenScratch+2),a      ;Save Address
     xor b
-    ld (packetGenScratch+5),a      ;Save error
+    ld (packetGenScratch+4),a      ;Save error
     ld a,b
-    ld (packetGenScratch+4),a      ;save speed command
+    ld (packetGenScratch+3),a      ;save speed command
     ld a,255
-    ld (packetGenScratch+1),a
-    ld (packetGenScratch+2),a      ;Save Preamble
+    ld (packetGenScratch),a
+    ld (packetGenScratch+1),a      ;Save Preamble
+    ld (dccState.curDat),a
        
     ld a,c
     ld (dccState.repeat),a         ;save repeat count
-    ld a,45
-    ld (packetGenScratch),a     
     
-    ;ppabe
-    ld hl,packetGenScratch+1
-    ld e,8*5
-    ld c,FFh
-    ld a,48
-    call insertBit
-    ld hl,packetGenScratch+1
-    ld e,8*4
-    ld c,0
-    ld a,48
-    call insertBit
-    ld hl,packetGenScratch+1
-    ld e,8*3
-    ld c,0
-    ld a,48
-    call insertBit
-    ld hl,packetGenScratch+1
-    ld e,8*2
-    ld c,0
-    ld a,48
-    call insertBit
-    ld de,dccUserPacket
+    ld e,b
+    call preparePacket
+    
+    ld de,dccUserPacket+1
     ld hl,packetGenScratch
     ld bc,10
     ldir
+    
     xor a
     ld (dccState.flags),a
-    ld (dccState.size),a
+    ld (dccState.size),a   ;Size is actually current bit count...really need to rename this
     ld hl,dccUserPacket
+    ld (hl),44                  ;Size will always be 44 for a 3byte packet
     ld (dccState.msgPTR),hl
-    ld a,255
-    ld (dccState.curDat),a
     ei
     ret
 dccSendLongSpeed:
     ret ;To be done
+    
 generateLUT:  ;in: DE=starting address. Must be 256-byte aligned.
 	ld a,e
 	rrca \ rrca \ rrca
@@ -372,6 +378,7 @@ _genLutNoShift:
 ;E = bitpos to insert
 ;C=0 to insert 0, C=$FF to insert 1. Destroys all registers
 insertBit:  
+    ld a,8*10
     ld (maxbits),a
 	ld d,BitMask_LookupTables>>8
 	ld a,(de)

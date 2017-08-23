@@ -57,7 +57,7 @@ startApp:
 	ld hl,doNothing
 	ld (e_numpad),hl    ;numpad key press down and up events
 	
-  ld hl,dcc.handleReverser
+    ld hl,dcc.handleReverser
 	ld (ctrl.e_updown),hl   ;updown event for forward/reverse
 	
 	ld hl,dcc.handleThrottle
