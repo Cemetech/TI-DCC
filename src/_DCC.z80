@@ -288,6 +288,76 @@ _128Speed:
     
 handleFunction:
     ret
+	
+handleNumpad:
+	call _npmakedata        ;returns B for data
+	ld a,(dccState.Flags)
+	bit AddressSize,a
+	jr nz,_handleNumpad_longaddress
+_handleNumpad_shortaddress:
+	ld c,2
+	ld a,(dccState.address)
+	jp dccSendShort3byte
+_handleNumpad_longaddress:
+	;nothing here yet.
+	ret
+_handleNumpad_makedata:
+	ld a,c
+	sub 5
+	jr c,_hnp_fg1
+	sub 8
+	jr c,_hnp_fg2
+	ld b,0
+	ret
+_hnp_fg1:
+	ld a,(bankdata+0)
+	rrca
+	ld a,%00000100 ;instruction group one (100)
+_hnp_fgwrite1p4:
+	rla            ;shift FL into what will be bit 4
+	ld b,4
+	ld hl,bankdata+5-1
+	call _hnp_construct_from_bank
+	ret
+_hnp_fg2:
+	ld b,4
+	add a,b  ;carry set if second half is being used.
+	ccf      ;which is the opposite of what we actually need. oops.
+	ld hl,bankdata+5+4-1  ;Focus on F5-F8
+	jr c,{+} ;if carry, then skip focusing on F9-F12.
+	ld hl,bankdata+5+4+4-1
++:	ld a,%00000101 ;instruction group two (101)
+	jr _hnp_fgwrite1p4
+	
+	
+	
+	
+	
+
+	
+	
+	
+;in:  A=initialBitFieldState B=looplen, HL=startOfBankOffsetedFromEnd
+;out: B=bits setfrom LSBtoMSB
+_hnp_construct_from_bank:
+	ld c,(hl)
+	dec hl
+	rrc c      ;shift out bit set.
+	rra        ;shift in bit
+	djnz _hnp_construct_from_bank
+	ld a,b
+	ret
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
     
 PreparePacket:
     ;In e,amount of bytes in packet
