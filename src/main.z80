@@ -3,8 +3,9 @@
 .export
 
 .defpage 0,16*1024,$4000
-
+.nolist
 .include "src/inc/ti84plus.inc"
+.list
 .include "src/inc/defs.inc"
 
 .include "obj/sprites.inc"

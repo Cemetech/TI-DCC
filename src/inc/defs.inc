@@ -15,8 +15,8 @@
 .define wh(w,h) (256*((h)-1))+((w)-1)+0
 
 ;//textShadow on 84+CSE is 260 bytes. Don't go overboard.
-userMemPtr           = textshadow ;rolling pointer for compile-time mem alloc
-allocRtnCount        = 0          ;for keeping track of allocations for routines
+userMemPtr           = savesscreen ;rolling pointer for compile-time mem alloc
+allocRtnCount        = 0           ;for keeping track of allocations for routines
 .deflong allocMem(size,labelname)
     labelname = userMemPtr
     labelname{_size} = (size)
