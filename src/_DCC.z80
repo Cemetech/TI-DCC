@@ -240,7 +240,7 @@ handleThrottle:
 _14Speed:
     ld a,%01000000
     bit Direction,(hl)
-    jp z,_setReverse14
+    jp nz,_setReverse14
 _setForward14:
     set 5,a          ;%01D00000
 _setReverse14:
@@ -281,10 +281,20 @@ _setReverse28:
     
     
 _128Speed:
-    ;Handle the sane speed packet
-    ;need to implement 4/5byte packets first though so 
-    ;ABORT
-    ret
+	ld a,e          ;save throttle value
+	ld e,%00111111  ;Advanced Operations Instruction (100), sub 11111
+	or a
+	jr z,_128Speed_stopped
+	inc a
+_128Speed_stopped:
+	and %01111110   ;clear bit 7 in case input speed was too large. This is reverse dir.
+	ld hl,dccState.Flags
+	bit Direction,(hl)
+	jr nz,_128Speed_stayReversed
+	or %10000000
+_128Speed_stayReversed:
+	ld d,a
+	jp dccSend4db   ;generic send in DE. Selects long/short for us.
     
 handleFunction:
     ret
@@ -313,8 +323,7 @@ _hnp_fgwrite1p4:
 	call _hnp_construct_from_bank
 	jp _hnp_send3bytes
 _hnp_fg2:
-	ld b,4
-	add a,b  ;carry set if second half is being used.
+	add a,4  ;carry set if second half is being used.
 	ccf      ;which is the opposite of what we actually need. oops.
 	ld hl,bankdata+5+4-1  ;Focus on F5-F8
 	jr c,{+} ;if carry, then skip focusing on F9-F12.
@@ -348,6 +357,7 @@ _hnpsend3bytes_longaddress:
 	;
 	ret
 
+dccSend4db:
 _hnp_send4bytes:  ;entry: DE=bytepairtosend (L=first byte, H=second byte)
 	ld a,(dccState.Flags)
 	bit AddressSize,a

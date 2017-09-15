@@ -71,10 +71,25 @@ startApp:
 	
 	call DCC.init       ;setup interrupt handler
 	; ******** END EXAMPLE SET UP CODE *********
-  
+	
 	call ctrl.EventLoop
 
 exitApp:
+	;Reset interrupt states
+	di
+	xor a
+	out (0),a
+	out ($30),a
+	out ($33),a
+	out ($36),a
+	ld a,$50
+	out ($57),a
+	ld a,1
+	out ($5B),a
+	ld a,$0B
+	out (3),a  ;set interrupts back to normal again
+	im 1
+	ei
 	;break down graphics
 	call gfx.Exit
 	;disable partial memory mapping
