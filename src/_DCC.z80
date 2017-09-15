@@ -256,10 +256,10 @@ _JPBasedOffAddressSize:
     jp nz,_LongAddress
 _ShortAddress
     ld a,(dccState.address)
-    jp dccSendShortSpeed
+    jp dccSendShort3db
 _LongAddress:
     ld hl,(dccState.address)
-    jp dccSendLongSpeed
+    jp dccSendLong3db
     
     
     
@@ -289,24 +289,17 @@ _128Speed:
 handleFunction:
     ret
 	
+	
 handleNumpad:
-	call _npmakedata        ;returns B for data
-	ld a,(dccState.Flags)
-	bit AddressSize,a
-	jr nz,_handleNumpad_longaddress
-_handleNumpad_shortaddress:
-	ld c,2
-	ld a,(dccState.address)
-	jp dccSendShort3byte
-_handleNumpad_longaddress:
-	;nothing here yet.
-	ret
-_handleNumpad_makedata:
 	ld a,c
 	sub 5
-	jr c,_hnp_fg1
+	jr c,_hnp_fg1         ;FL,F1-F4
 	sub 8
-	jr c,_hnp_fg2
+	jr c,_hnp_fg2         ;F5-F8,F9-F12
+	sub 8
+	jr c,_hnp_fexp11110   ;F13-F20
+	sub 8
+	jr c,_hnp_fexp11111   ;F21-F28
 	ld b,0
 	ret
 _hnp_fg1:
@@ -318,7 +311,7 @@ _hnp_fgwrite1p4:
 	ld b,4
 	ld hl,bankdata+5-1
 	call _hnp_construct_from_bank
-	ret
+	jp _hnp_send3bytes
 _hnp_fg2:
 	ld b,4
 	add a,b  ;carry set if second half is being used.
@@ -328,14 +321,46 @@ _hnp_fg2:
 	ld hl,bankdata+5+4+4-1
 +:	ld a,%00000101 ;instruction group two (101)
 	jr _hnp_fgwrite1p4
+_hnp_fexp11110:  ;instruction group 110
+	ld hl,bankdata+5+4+4+8-1
+_hnp_fgwrite1p8:
+	ld b,8
+	xor a
+	call _hnp_construct_from_bank
+	ld d,b
+	ld e,%11011110
+	jp _hnp_send4bytes
+_hnp_fexp11111:
+	ld hl,bankdata+5+4+4+8+8-1
+	jr _hnp_fgwrite1p8
 	
-	
-	
-	
-	
+_hnp_send3bytes:  ;entry: B=byteToSend
+	ld a,(dccState.Flags)
+	bit AddressSize,a
+	jr nz,_hnpsend3bytes_longaddress
+_hnpsend3bytes_shortaddress:
+	ld c,2
+	ld a,(dccState.address)
+	jp dccSendShort3db
+_hnpsend3bytes_longaddress:
+	;
+	;nothing here yet.
+	;
+	ret
 
-	
-	
+_hnp_send4bytes:  ;entry: DE=bytepairtosend (L=first byte, H=second byte)
+	ld a,(dccState.Flags)
+	bit AddressSize,a
+	jr nz,_hnpsend4bytes_longaddress
+_hnpsend4bytes_shortaddress:
+	ld c,2
+	ld a,(dccState.address)
+	jp dccSendShort4db
+_hnpsend4bytes_longaddress:
+	;
+	;nothing here yet
+	;
+	ret
 	
 ;in:  A=initialBitFieldState B=looplen, HL=startOfBankOffsetedFromEnd
 ;out: B=bits setfrom LSBtoMSB
@@ -368,7 +393,7 @@ PreparePacket:
                            ; we loop from packet end
     ld hl,packetGenScratch  
     ld c,$FF
-_PreparepacketLoop:
+_preparePacketLoop:
     push de
         push bc
             push hl             ;Move in 8bits and insert next bit
@@ -380,10 +405,40 @@ _PreparepacketLoop:
     sub 8
     ld e,a            ;Move to next byte
     ld c,0              ;Set c to insert 0 bits
-    djnz _dccPreparepacketLoop
+    djnz _preparePacketLoop
     ret
     
-dccSendShort3byte:  ;in b,data a,address c,repeat
+	
+	
+	
+dccSendShort4db:  ;in DE,data a,address c,repeat
+	di
+	ld hl,packetGenScratch+5
+	push af
+		xor e
+		xor d
+		ld (hl),a  ;+5 Error
+		dec hl
+		ld (hl),d  ;+4 Data-high
+		dec hl
+		ld (hl),e  ;+3 Data-Low
+		dec hl
+	pop af
+	ld (hl),a  ;+2 Address
+	dec hl
+	ld a,255
+	ld (hl),a  ;+1 Preamble
+	dec hl
+	ld (hl),a  ;+0 Preamble
+	ld (dccState.curDat),a
+	
+	ld a,c
+	ld (dccState.repeat),a
+	ld a,44+9
+	ld e,6
+	jr _dccSendShort_ConstructPacketGeneric
+	
+dccSendShort3db:  ;in b,data a,address c,repeat
 	di
 	ld hl,packetGenScratch+4
 	ld e,a
@@ -402,13 +457,17 @@ dccSendShort3byte:  ;in b,data a,address c,repeat
 	
 	ld a,c
 	ld (dccState.repeat),a
+	ld a,44
+	ld e,5
 	
+;in: dccState setup, a=packetLenInBits, e=packetLengthInBytes
+_dccSendShort_ConstructPacketGeneric:
 	push hl
-		ld e,b
-		call PreparePacket
-		xor a
+		push af
+			call PreparePacket
+		pop af
 		ld hl,dccUserPacket
-		ld (hl),44
+		ld (hl),a
 		ld (dccState.msgPTR),hl
 		inc hl
 		ex de,hl
@@ -416,9 +475,15 @@ dccSendShort3byte:  ;in b,data a,address c,repeat
 	ld bc,10
 	ldir
 	ei
-	ret ;48 bytes
+	ret
+	
+	
+	
+	
+	
+	
 
-dccSendLongSpeed:
+dccSendLong3db:
     ret ;To be done
     
 generateLUT:  ;in: DE=starting address. Must be 256-byte aligned.
