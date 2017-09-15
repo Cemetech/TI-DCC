@@ -196,13 +196,19 @@ _evl_rightkey_doconfig:
 ;This event can occur regardless of mode.
 ;It's called "Emergency Stop" for a reason.
 _evl_enterkey:
+	ld a,(direction)
 	ld a,DIR_ESTOP
 	ld (direction),a
 	xor a
 	ld (throttle),a
+	dec e
+	jr nz,_evl_enterkey_doconfig
+_evl_enterkey_docontroller:  ;if we're in not in config, update display
 	call UpdateDirection
 	call UpdateThrottle
+_evl_enterkey_doconfig:
 	ld hl,_evloop_keywait_and_jumpback \ push hl \ ld hl,(e_estop) \ jp (hl)
+	
 ;---
 _evl_delkey:
 	dec e
@@ -294,7 +300,7 @@ _evl_hold_throttle:
 	ld d,a
 	ld hl,{+}
 	push hl
-	ld hl,(e_updown)
+	ld hl,(e_leftright)
 	jp (hl)
 +:	call kbd.getAnyKey
 	inc a
