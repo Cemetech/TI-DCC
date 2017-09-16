@@ -277,7 +277,7 @@ _evl_nptable:
 .db sk9,sk8,sk7,sk6,sk5,sk4,sk3,sk2,sk1,sk0,$FF
 
 _evl_throttlemaxtable:
-.db 14+1,28+1,126+1
+.db 14,28,127
 
 _evl_call_npevent:
 	ld hl,(e_numpad)
