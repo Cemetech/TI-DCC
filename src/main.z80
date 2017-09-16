@@ -64,7 +64,7 @@ startApp:
 	ld hl,dcc.handleThrottle
 	ld (e_leftright),hl ;leftright press event for accel/decel
   
-	ld hl,doNothing
+	ld hl,dcc.handleCFG
 	ld (e_cfgack),hl    ;when user pushes OK on config screen
 	
 	ld hl,doNothing

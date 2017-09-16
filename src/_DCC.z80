@@ -122,6 +122,7 @@ SetUpInterrupt:
 InterruptServiceRoutineEnter:
     jp InterruptServiceRoutine
 InterruptServiceRoutine:
+    jp $
     ex af,af'               
         exx
             ld bc,(%00000011 << 8)+pCrstlTmr1Cfg ;
@@ -217,6 +218,30 @@ doWait:
     ex af,af'
     ei
     ret
+    
+;Takes CFG information and sets up the interrupt
+handleCFG:
+    di
+    ld (dccState.address),de
+    ld hl,dccState.flags
+    dec b
+    jp nz,_endDCMode
+_dcModeSetupStart:
+;Nothing here yet
+_endDCMode:
+    dec c
+    jp z,_handleLongAddress
+    res 4,(hl)
+    jp _endHandleCFG
+_handleLongAddress
+    set 4,(hl)
+_endHandleCFG:
+    ex af,af'
+    xor a
+    ex af,af'
+    ei
+    ret
+
 ;Handles setting direction bit. Do we want to play with the throttle here?
 handleReverser:
     ld hl,dccState.Flags
@@ -226,7 +251,7 @@ _dirReverse:
     set 3,(hl)
     ret
 _dirForward:
-    res 3,(hl)
+`   res 3,(hl)
     ret
     
     
@@ -264,19 +289,20 @@ _LongAddress:
     
     
 _28Speed:  ;speed in E
-    ld a,%00010000
-    and e
-    add a,254          ;anything over 239
-    rl e
-    and %00011111
+    ld a,4
+    add a,e ;Set past Stop
+    rr a    ;Rotate Off LSB
+    jp nc,_28noset
+    set 4,a  ;Move lsb to bit 5
+_28noset:
     bit Direction,(hl)
     jp nz,_setReverse28 ; Leave res for reverse
 _setForward28:
-    set 5,e          ;%XXD43210
+    set 5,a          ;%XXD43210
 _setReverse28:       
-    ld b,e
-    set 6,b
-    ld c,2
+    ld b,a
+    set 6,b          ;Make speed command
+    ld c,$FF
     jp _JPBasedOffAddressSize 
     
     
@@ -484,6 +510,13 @@ _dccSendShort_ConstructPacketGeneric:
 	pop hl
 	ld bc,10
 	ldir
+    xor a
+    ld (dccState.Size),a
+    ld a,255
+    ld (dccState.curDat),a
+    ex af,af'
+    xor a
+    ex af,af'
 	ei
 	ret
 	
@@ -495,6 +528,8 @@ _dccSendShort_ConstructPacketGeneric:
 
 dccSendLong3db:
     ret ;To be done
+    
+
     
 generateLUT:  ;in: DE=starting address. Must be 256-byte aligned.
 	ld a,e
@@ -577,13 +612,21 @@ insertBitCont:
     
 .align 16     ;This needs an alignment due to how I handle indexing
 idlePacket:   ;Preformed idle packet
-.db 43
+.db 44
 .db %11111111
 .db %11111110
 .db %11111111
 .db %00000000
 .db %01111111
-.db %11000000
+.db %11100000
+testPacket:
+.db 44
+.db %11111111
+.db %11111110
+.db %00000011
+.db %00111111
+.db %10011111
+.db %00100000
 .echoln "MODULE DCC  SIZE : ",$-_modulestart
 .endlocal
 .endmodule
