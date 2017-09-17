@@ -67,12 +67,11 @@ startApp:
 	ld hl,dcc.handleCFG
 	ld (e_cfgack),hl    ;when user pushes OK on config screen
 	
-	ld hl,doNothing
+	ld hl,dcc.handleEStop
 	ld (e_estop),hl     ;when user pushes Enter to trigger eStop
 	
 	call DCC.init       ;setup interrupt handler
 	; ******** END EXAMPLE SET UP CODE *********
-	
 	call ctrl.EventLoop
 
 exitApp:
