@@ -149,6 +149,8 @@ _evl_upkey_docontroller_collect:
 		call UpdateThrottle
 		ld a,(throttle)
 		ld e,a
+		ld a,(throttlemode)
+		ld d,a
 	pop af
 	ld hl,_evloop_keywait_and_jumpback \ push hl \ ld hl,(e_updown) \ jp (hl)
 _evl_upkey_doconfig:
