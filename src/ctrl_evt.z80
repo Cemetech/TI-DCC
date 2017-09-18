@@ -106,14 +106,16 @@ _evlnpdctrl_togfn:
 	pop bc
 	bit C_NOTMOMENTARY,(ix+C_FLAGS)
 	jp nz,_evloop_keywait_and_jumpback
-	ld a,(keytemp)
-	ld c,a
--:	call kbd.gsGetCSC  ;wait until exact key that was pressed is no longer
-	or a
-	jr z,{+}
-	cp c
-	jr z,{-}
-+:	call _evl_np_togswitch
+	push bc
+		ld a,(keytemp)
+		ld c,a
+-:		call kbd.gsGetCSC  ;wait until exact key that was pressed is no longer
+		or a
+		jr z,{+}
+		cp c
+		jr z,{-}
++:		call _evl_np_togswitch
+	pop bc
 	call _evl_call_npevent
 	call UpdateSwitchState
 	jp EventLoop

@@ -55,7 +55,7 @@ startApp:
 	ld hl,dcc.handleFunction
 	ld (ctrl.e_numpad),hl   ;numpad key press and release events
 	
-	ld hl,doNothing
+	ld hl,handleNumpad
 	ld (e_numpad),hl        ;numpad key press and release events
 	
     ld hl,dcc.handleReverser

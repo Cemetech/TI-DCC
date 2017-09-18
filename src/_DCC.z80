@@ -127,7 +127,7 @@ SetUpInterrupt:
 InterruptServiceRoutineEnter:
     jp InterruptServiceRoutine
 InterruptServiceRoutine:
-    ex af,af'               
+    ex af,af'               ;'
         exx
             ld bc,(%00000011 << 8)+pCrstlTmr1Cfg ;
             out (c),b                ;17cc Faster then PushPop
@@ -191,7 +191,7 @@ stateBEnd:
 doIntEnd:   
             ld a,(dccState.waitCTR)     ;waitCTR is set in loop or at last wait count
         exx
-    ex af,af'
+    ex af,af' ;'
     ei
     ret
     
@@ -230,7 +230,7 @@ doWait:
             dec a
             ld (dccState.waitCTR),a ;Save wait
         exx
-    ex af,af'
+    ex af,af' ;'
     ei
     ret
     
@@ -251,17 +251,17 @@ _endDCMode:
 _handleLongAddress
     set 4,(hl)
 _endHandleCFG:
-    ex af,af'
+    ex af,af' ;'
     xor a
-    ex af,af'
+    ex af,af' ;'
     ei
     ret
     
 handleEStop:
     di
-    ex af,af'
+    ex af,af' ;'
     xor a
-    ex af,af' 
+    ex af,af' ;'
     ld a,(dccState.flags)
     and %11111000
     ld (dccState.flags),a    ;Zero wait
@@ -377,10 +377,10 @@ _hnp_fg1:
 	ld a,(bankdata+0)
 	rrca
 	ld a,%00000100 ;instruction group one (100)
+	ld hl,bankdata+5-1
 _hnp_fgwrite1p4:
 	rla            ;shift FL into what will be bit 4
 	ld b,4
-	ld hl,bankdata+5-1
 	call _hnp_construct_from_bank
 	jp _hnp_send3bytes
 _hnp_fg2:
@@ -393,15 +393,16 @@ _hnp_fg2:
 	jr _hnp_fgwrite1p4
 _hnp_fexp11110:  ;instruction group 110
 	ld hl,bankdata+5+4+4+8-1
+	ld e,%11011110
 _hnp_fgwrite1p8:
 	ld b,8
 	xor a
 	call _hnp_construct_from_bank
 	ld d,b
-	ld e,%11011110
 	jp _hnp_send4bytes
 _hnp_fexp11111:
 	ld hl,bankdata+5+4+4+8+8-1
+	ld e,%11011111
 	jr _hnp_fgwrite1p8
 	
 _hnp_send3bytes:  ;entry: B=byteToSend
@@ -439,9 +440,9 @@ _hnp_construct_from_bank:
 	ld c,(hl)
 	dec hl
 	rrc c      ;shift out bit set.
-	rra        ;shift in bit
+	rla        ;shift in bit
 	djnz _hnp_construct_from_bank
-	ld a,b
+	ld b,a
 	ret
 	
 	

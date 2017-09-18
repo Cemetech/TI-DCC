@@ -38,7 +38,8 @@ allocMem(1,throttle)       ;unsigned.
 allocMem(1,direction)      ;0=forward 1=backward -1:emergency stop triggered
 allocMem(1,tabflags)       ;b0=bank1 b1=bank2 [...] b4=[MODE]
 allocMem(2,curaddress)     ;0-32767 (signed 16 bit value, sign unused)
-allocMem((27*1),bankdata)  ;.db state
+allocMem((27*1),bankdata)  ;.db state.
+allocMem((03*2),gutterdat) ;prevent buffer overrun wrt reading above
 allocMem(1,menumode)       ;0=setup, 1=controller
 allocMem(1,enableDCmode)   ;0=disabled 1=DC mode enabled
 allocMem(1,dispDigits)
