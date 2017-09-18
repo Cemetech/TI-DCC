@@ -21,6 +21,7 @@ _modulestart:
 ;
 ;e_updown - Called when user pushes up or down to change train direction.
 ;			On entry: A= DIR_FORWARD, DIR_BACKWARD
+;					  E= current throttle value
 ;
 ;e_leftright - Called when user pushes left or right to change throttle.
 ;			   On entry: E = current throttle value

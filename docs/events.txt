@@ -27,6 +27,7 @@ e_updown - 	Triggers whenever the up or down keys have been pushed.
 			Register on entry:
 			A = ctrl.DIR_FORWARD if the train is now moving forward
 				ctrl.DIR_REVERSE if the train is now in reverse
+			E = Current throttle value
 					
 e_leftright -	Triggers whenever the left or right keys have been pushed.
 				This event repeatedly triggers for each time the throttle

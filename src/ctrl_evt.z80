@@ -74,6 +74,7 @@ _evl_numpad:
 	dec e
 	jr nz,_evl_numpad_doconfig
 _evl_numpad_docontroller:
+	ld (keytemp),a
 	call _getbankaddress
 	ld a,bankdata_size/27
 -:	add ix,bc
@@ -105,8 +106,14 @@ _evlnpdctrl_togfn:
 	pop bc
 	bit C_NOTMOMENTARY,(ix+C_FLAGS)
 	jp nz,_evloop_keywait_and_jumpback
-	call kbd.keyWait
-	call _evl_np_togswitch
+	ld a,(keytemp)
+	ld c,a
+-:	call kbd.gsGetCSC  ;wait until exact key that was pressed is no longer
+	or a
+	jr z,{+}
+	cp c
+	jr z,{-}
++:	call _evl_np_togswitch
 	call _evl_call_npevent
 	call UpdateSwitchState
 	jp EventLoop
@@ -140,6 +147,8 @@ _evl_upkey_docontroller_collect:
 	push af
 		call UpdateDirection
 		call UpdateThrottle
+		ld a,(throttle)
+		ld e,a
 	pop af
 	ld hl,_evloop_keywait_and_jumpback \ push hl \ ld hl,(e_updown) \ jp (hl)
 _evl_upkey_doconfig:
@@ -165,8 +174,9 @@ _evl_leftkey_docontroller:
 	dec a
 	jp m,_evloop_keywait_and_jumpback
 	ld (throttle),a
+	ld c,skLeft
 	call _evl_hold_throttle
-	jr nz,_evl_leftkey_docontroller
+	jr z,_evl_leftkey_docontroller
 	jp _evloop_keywait_and_jumpback
 _evl_leftkey_doconfig:
 	jp _evloop_keywait_and_jumpback
@@ -187,8 +197,9 @@ _evl_rightkey_docontroller:
 	cp (hl)
 	jp nc,_evloop_keywait_and_jumpback
 	ld (throttle),a
+	ld c,skRight
 	call _evl_hold_throttle
-	jr nz,_evl_rightkey_docontroller
+	jr z,_evl_rightkey_docontroller
 	jp _evloop_keywait_and_jumpback
 _evl_rightkey_doconfig:
 	jp _evloop_keywait_and_jumpback
@@ -298,12 +309,14 @@ _evl_hold_throttle:
 	ld e,a
 	ld a,(throttlemode)
 	ld d,a
-	ld hl,{+}
-	push hl
-	ld hl,(e_leftright)
-	jp (hl)
-+:	call kbd.getAnyKey
-	inc a
+	push bc
+		ld hl,{+}
+		push hl
+		ld hl,(e_leftright)
+		jp (hl)
++:	pop bc
+	call kbd.gsGetCSC
+	cp c
 	ld b,10
 	ret
 	

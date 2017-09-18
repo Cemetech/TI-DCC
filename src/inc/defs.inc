@@ -43,6 +43,7 @@ allocMem(1,menumode)       ;0=setup, 1=controller
 allocMem(1,enableDCmode)   ;0=disabled 1=DC mode enabled
 allocMem(1,dispDigits)
 allocMem(1,cursorcycle)
+allocMem(1,keytemp)
 ;---
 ;insert any new normal memory allocs for ctrl.z80 here.
 ;---
