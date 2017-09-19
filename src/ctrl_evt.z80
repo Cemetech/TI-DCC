@@ -129,8 +129,9 @@ _evl_numpad_doconfig:
 	and %11000000  ;disallow addresses higher than 14 bits
 	jr nz,{+}
 	add hl,bc
-	bit 6,h
-	jr nz,{+}  ;check to see if final digit input nudged over the limit
+	ld a,h
+	cp 62+1  ;if nc, then over limit. Address hard limit is 16127
+	jp nc,{+}
 	ld a,(dispDigits)
 	inc a
 	cp 5+1

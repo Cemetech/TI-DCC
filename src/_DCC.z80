@@ -417,10 +417,9 @@ _hnpsend3bytes_shortaddress:
 	ld a,(dccState.address)
 	jp dccSendShort3db
 _hnpsend3bytes_longaddress:
-	;
-	;nothing here yet.
-	;
-	ret
+	ld c,0
+	ld hl,(dccState.address)
+	jp dccSendLong3db
 
 dccSend4db:
 _hnp_send4bytes:  ;entry: DE=bytepairtosend (L=first byte, H=second byte)
@@ -432,10 +431,9 @@ _hnpsend4bytes_shortaddress:
 	ld a,(dccState.address)
 	jp dccSendShort4db
 _hnpsend4bytes_longaddress:
-	;
-	;nothing here yet
-	;
-	ret
+	ld c,0
+	ld hl,(dccState.address)
+	jp dccSendLong4db
 	
 ;in:  A=initialBitFieldState B=looplen, HL=startOfBankOffsetedFromEnd
 ;out: B=bits setfrom LSBtoMSB
@@ -566,8 +564,72 @@ _dccSendShort_ConstructPacketGeneric:
 	
 	
 
-dccSendLong3db:
-    ret ;To be done
+dccSendLong3db:  ;in b,data hl,address c,repeat
+	di
+	ld a,c
+	ld (dccState.repeat),a
+	
+	ex de,hl
+	ld hl,packetGenScratch+5
+	ld a,b
+	xor h
+	xor L
+	ld (hl),a    ;+5 Error
+	dec hl
+	ld (hl),b    ;+4 Data
+	dec hl
+	set 7,d
+	set 6,d
+	ld (hl),d    ;+3 Address High
+	dec hl
+	ld (hl),e    ;+2 Address Low
+	dec hl
+	ld a,255
+	ld (hl),a    ;+1 Preamble
+	dec hl
+	ld (hl),a    ;+0 Preamble
+	ld (dccState.curDat),a
+	
+	ld a,(6*8)+5
+	ld e,6
+	jp _dccSendShort_ConstructPacketGeneric
+	
+dccSendLong4db:  ;in de,data hl,address c,repeat
+	di
+	ld a,c
+	ld (dccState.repeat),a
+	
+	push de
+	pop bc
+	ex de,hl
+	ld hl,packetGenScratch+6
+	ld a,b
+	xor C
+	xor h
+	xor L
+	ld (hl),a    ;+6 Error
+	dec hl
+	ld (hl),b    ;+5 Data High
+	dec hl
+	ld (hl),c    ;+4 Data Low
+	dec hl
+	set 7,d
+	set 6,d
+	ld (hl),d    ;+3 Address High
+	dec hl
+	ld (hl),e    ;+2 Address Low
+	dec hl
+	ld a,255
+	ld (hl),a    ;+1 Preamble
+	dec hl
+	ld (hl),a    ;+0 Preamble
+	ld (dccState.curDat),a
+	
+	ld a,(7*8)+6
+	ld e,7
+	jp _dccSendShort_ConstructPacketGeneric
+
+	
     
 
     
