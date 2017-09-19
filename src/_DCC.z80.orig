@@ -32,13 +32,6 @@ LinePowerControl = 1
 PeriodAB = 2
 Direction = 3
 AddressSize = 4
-OutputMirrorMask = 1 << 0   
-LinePowerControlMask = 1 << 1 
-PeriodABMask = 1 << 2 
-DirectionMask = 1 << 3 
-AddressSizeMask = 1 << 4 
-ZEROHOLD = 1
-WAITCOUNT = 6 
 ;Default initializations for queueing message
 ; <ptr>
 ; 0 
@@ -129,7 +122,7 @@ SetUpInterrupt:
 InterruptServiceRoutineEnter:
     jp InterruptServiceRoutine
 InterruptServiceRoutine:
-    ex af,af'               ;'
+    ex af,af'               
         exx
             ld bc,(%00000011 << 8)+pCrstlTmr1Cfg ;
             out (c),b                ;17cc Faster then PushPop
@@ -145,26 +138,19 @@ InterruptServiceRoutine:
 doPeriodA:
             or a                     ;Check current data Bit
             jp nz,_notZeroBit1       ;If Z set wait
-            ld a,ZEROHOLD  
+            ld a,1  
             ld (dccState.waitCTR),a  ;Load Wait
 _notZeroBit1:  
-
-            ld a,(dccState.flags)    ;Need to make flags look like
-                                     ; %XXXXX1X0
-            and %11111110
-            or  %00000100
+            ld a,periodB             ;Set period and Output Link Mirror Bit
             ld (dccState.flags),a    ;to %00000010
-            
             jp doIntEnd
 doPeriodB:
             or a                     ;Check current data bit
             jp nz,_notZeroBit2       ;If Z set Wait
-            ld a,ZEROHOLD                   ;
+            ld a,1                   ;
             ld (dccState.waitCTR),a  ;Load Wait
 _notZeroBit2:  
-            ld a,(dccState.flags)    ; %XXXXX0X1
-            and %11111011
-            or  %00000001
+            ld a,periodA             ;Set period and Output Link Mirror Bit
             ld (dccState.flags),a    ;to %00000001
 stateBEnd:
 
@@ -193,7 +179,7 @@ stateBEnd:
 doIntEnd:   
             ld a,(dccState.waitCTR)     ;waitCTR is set in loop or at last wait count
         exx
-    ex af,af' ;'
+    ex af,af'
     ei
     ret
     
@@ -206,91 +192,42 @@ checkRepeat:                            ;If repeat !=0 repeat packet send
             dec a
             ld (dccState.repeat),a      ;Else Dec and store repeat
 repeatEntry:
-            ld a,(dccState.flags)
-            and %11111010
-            ld (dccState.flags),a
             xor a
             ld (dccState.size),a        ;reset packet
-            ld a,255
+            ld (dccState.flags),a
+            ld a,1
             ld (dccState.waitCTR),a     ;Needs code to handle DC mode
             jp doWait                   ;no need to rest curdat is already 1
             
             
 loadIdleAfterRepeat:
-            ld a,(dccState.flags)
-            and %11111010
-            ld (dccState.flags),a
             xor a
+            ld (dccState.flags),a
             ld (dccState.size),a
-            ld (dccState.waitCTR),a
             ld hl,idlePacket
             ld (dccState.msgPTR),hl
             ld a,255
+            ld (dccState.waitCTR),a
             ld (dccState.repeat),a
             ld (dccState.curDat),a
 doWait:
             dec a
             ld (dccState.waitCTR),a ;Save wait
         exx
-    ex af,af' ;'
+    ex af,af'
     ei
     ret
-    
-;Takes CFG information and sets up the interrupt
-handleCFG:
-    di
-    ld (dccState.address),de
-    ld hl,dccState.flags
-    dec b
-    jp nz,_endDCMode
-_dcModeSetupStart:
-;Nothing here yet
-_endDCMode:
-    dec c
-    jp z,_handleLongAddress
-    res 4,(hl)
-    jp _endHandleCFG
-_handleLongAddress
-    set 4,(hl)
-_endHandleCFG:
-    ex af,af' ;'
-    xor a
-    ex af,af' ;'
-    ei
-    ret
-    
-handleEStop:
-    di
-    ex af,af' ;'
-    xor a
-    ex af,af' ;'
-    ld a,(dccState.flags)
-    and %11111000
-    ld (dccState.flags),a    ;Zero wait
-    xor a
-    ld (dccState.flags),a
-    ld (dccState.size),a
-    ld hl,estopPacket
-    ld (dccState.msgPTR),hl
-    ld a,255
-    ld (dccState.repeat),a
-    ld (dccState.curDat),a
-    ld a,WAITCOUNT
-    ld (dccState.waitCTR),a
-    ei
-    ret
-    
 ;Handles setting direction bit. Do we want to play with the throttle here?
 handleReverser:
     ld hl,dccState.Flags
-    cp ctrl.DIR_FORWARD
-    jp z,_dirForward
+    cp ctrl.DIR_REVERSE
+    jp nz,_dirForward
 _dirReverse:
-    set Direction,(hl)
-    jp handleThrottle
+    set 3,(hl)
+    ret
 _dirForward:
-    res Direction,(hl)
-    jp handleThrottle
+    res 3,(hl)
+    ret
     
     
 handleThrottle:
@@ -303,7 +240,7 @@ handleThrottle:
 _14Speed:
     ld a,%01000000
     bit Direction,(hl)
-    jp nz,_setReverse14
+    jp z,_setReverse14
 _setForward14:
     set 5,a          ;%01D00000
 _setReverse14:
@@ -313,151 +250,44 @@ _setReverse14:
     or e             ;%01DXSSSS 
 _setStop:
     ld b,e
-    ld c,0
+    ld c,2
 _JPBasedOffAddressSize:
     bit AddressSize,(hl) ;z for short address
     jp nz,_LongAddress
 _ShortAddress
     ld a,(dccState.address)
-    jp dccSendShort3db
+    jp dccSendShort1D
 _LongAddress:
     ld hl,(dccState.address)
-    jp dccSendLong3db
+    jp dccSendLongSpeed
     
     
     
 _28Speed:  ;speed in E
-    ld a,4
-    add a,e ;Set past Stop
-    rr a    ;Rotate Off LSB
-    jp nc,_28noset
-    set 4,a  ;Move lsb to bit 5
-_28noset:
+    ld a,%00010000
+    and e
+    add a,254          ;anything over 239
+    rl e
+    and %00011111
     bit Direction,(hl)
     jp nz,_setReverse28 ; Leave res for reverse
 _setForward28:
-    set 5,a          ;%XXD43210
+    set 5,e          ;%XXD43210
 _setReverse28:       
-    ld b,a
-    set 6,b          ;Make speed command
-    ld c,$0
+    ld b,e
+    set 6,b
+    ld c,2
     jp _JPBasedOffAddressSize 
     
     
 _128Speed:
-	ld a,e          ;save throttle value
-	ld e,%00111111  ;Advanced Operations Instruction (100), sub 11111
-	or a
-	jr z,_128Speed_stopped
-	inc a
-_128Speed_stopped:
-	and %01111110   ;clear bit 7 in case input speed was too large. This is reverse dir.
-	ld hl,dccState.Flags
-	bit Direction,(hl)
-	jr nz,_128Speed_stayReversed
-	or %10000000
-_128Speed_stayReversed:
-	ld d,a
-	jp dccSend4db   ;generic send in DE. Selects long/short for us.
+    ;Handle the sane speed packet
+    ;need to implement 4/5byte packets first though so 
+    ;ABORT
+    ret
     
 handleFunction:
     ret
-	
-	
-handleNumpad:
-	ld a,c
-	sub 5
-	jr c,_hnp_fg1         ;FL,F1-F4
-	sub 8
-	jr c,_hnp_fg2         ;F5-F8,F9-F12
-	sub 8
-	jr c,_hnp_fexp11110   ;F13-F20
-	sub 8
-	jr c,_hnp_fexp11111   ;F21-F28
-	ld b,0
-	ret
-_hnp_fg1:
-	ld a,(bankdata+0)
-	rrca
-	ld a,%00000100 ;instruction group one (100)
-	ld hl,bankdata+5-1
-_hnp_fgwrite1p4:
-	rla            ;shift FL into what will be bit 4
-	ld b,4
-	call _hnp_construct_from_bank
-	jp _hnp_send3bytes
-_hnp_fg2:
-	add a,4  ;carry set if second half is being used.
-	ccf      ;which is the opposite of what we actually need. oops.
-	ld hl,bankdata+5+4-1  ;Focus on F5-F8
-	jr c,{+} ;if carry, then skip focusing on F9-F12.
-	ld hl,bankdata+5+4+4-1
-+:	ld a,%00000101 ;instruction group two (101)
-	jr _hnp_fgwrite1p4
-_hnp_fexp11110:  ;instruction group 110
-	ld hl,bankdata+5+4+4+8-1
-	ld e,%11011110
-_hnp_fgwrite1p8:
-	ld b,8
-	xor a
-	call _hnp_construct_from_bank
-	ld d,b
-	jp _hnp_send4bytes
-_hnp_fexp11111:
-	ld hl,bankdata+5+4+4+8+8-1
-	ld e,%11011111
-	jr _hnp_fgwrite1p8
-	
-_hnp_send3bytes:  ;entry: B=byteToSend
-	ld a,(dccState.Flags)
-	bit AddressSize,a
-	jr nz,_hnpsend3bytes_longaddress
-_hnpsend3bytes_shortaddress:
-	ld c,0
-	ld a,(dccState.address)
-	jp dccSendShort3db
-_hnpsend3bytes_longaddress:
-	;
-	;nothing here yet.
-	;
-	ret
-
-dccSend4db:
-_hnp_send4bytes:  ;entry: DE=bytepairtosend (L=first byte, H=second byte)
-	ld a,(dccState.Flags)
-	bit AddressSize,a
-	jr nz,_hnpsend4bytes_longaddress
-_hnpsend4bytes_shortaddress:
-	ld c,0
-	ld a,(dccState.address)
-	jp dccSendShort4db
-_hnpsend4bytes_longaddress:
-	;
-	;nothing here yet
-	;
-	ret
-	
-;in:  A=initialBitFieldState B=looplen, HL=startOfBankOffsetedFromEnd
-;out: B=bits setfrom LSBtoMSB
-_hnp_construct_from_bank:
-	ld c,(hl)
-	dec hl
-	rrc c      ;shift out bit set.
-	rla        ;shift in bit
-	djnz _hnp_construct_from_bank
-	ld b,a
-	ret
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
     
 PreparePacket:
     ;In e,amount of bytes in packet
@@ -468,7 +298,7 @@ PreparePacket:
                            ; we loop from packet end
     ld hl,packetGenScratch  
     ld c,$FF
-_preparePacketLoop:
+_PreparepacketLoop:
     push de
         push bc
             push hl             ;Move in 8bits and insert next bit
@@ -480,40 +310,43 @@ _preparePacketLoop:
     sub 8
     ld e,a            ;Move to next byte
     ld c,0              ;Set c to insert 0 bits
-    djnz _preparePacketLoop
+    djnz _preparepacketLoop
     ret
     
-	
-	
-	
-dccSendShort4db:  ;in DE,data a,address c,repeat
-	di
-	ld hl,packetGenScratch+5
-	push af
-		xor e
-		xor d
-		ld (hl),a  ;+5 Error
-		dec hl
-		ld (hl),d  ;+4 Data-high
-		dec hl
-		ld (hl),e  ;+3 Data-Low
-		dec hl
-	pop af
-	ld (hl),a  ;+2 Address
-	dec hl
-	ld a,255
-	ld (hl),a  ;+1 Preamble
-	dec hl
-	ld (hl),a  ;+0 Preamble
-	ld (dccState.curDat),a
-	
-	ld a,c
-	ld (dccState.repeat),a
-	ld a,44+9
-	ld e,6
-	jr _dccSendShort_ConstructPacketGeneric
-	
-dccSendShort3db:  ;in b,data a,address c,repeat
+<<<<<<< HEAD
+dccSendShort1D:  ;in b,data a,address c,repeat
+    di
+    ld (packetGenScratch+2),a      ;Save Address
+    xor b
+    ld (packetGenScratch+4),a      ;Save error
+    ld a,b
+    ld (packetGenScratch+3),a      ;save speed command
+    ld a,255
+    ld (packetGenScratch),a
+    ld (packetGenScratch+1),a      ;Save Preamble
+    ld (dccState.curDat),a
+       
+    ld a,c
+    ld (dccState.repeat),a         ;save repeat count
+    
+    ld e,b
+    call preparePacket
+    
+    ld de,dccUserPacket+1
+    ld hl,packetGenScratch
+    ld bc,10
+    ldir
+    
+    xor a
+    ld (dccState.flags),a
+    ld (dccState.size),a   ;Size is actually current bit count...really need to rename this
+    ld hl,dccUserPacket
+    ld (hl),44                  ;Size will always be 44 for a 3byte packet
+    ld (dccState.msgPTR),hl
+    ei
+    ret
+=======
+dccSendShort3byte:  ;in b,data a,address c,repeat
 	di
 	ld hl,packetGenScratch+4
 	ld e,a
@@ -532,46 +365,25 @@ dccSendShort3db:  ;in b,data a,address c,repeat
 	
 	ld a,c
 	ld (dccState.repeat),a
-	ld a,46
-	ld e,5
 	
-;in: dccState setup, a=packetLenInBits, e=packetLengthInBytes
-_dccSendShort_ConstructPacketGeneric:
 	push hl
-		push af
-			call PreparePacket
-		pop af
+		ld e,b
+		call PreparePacket
+		xor a
 		ld hl,dccUserPacket
-		ld (hl),a
+		ld (hl),44
 		ld (dccState.msgPTR),hl
 		inc hl
 		ex de,hl
 	pop hl
 	ld bc,10
 	ldir
-    xor a
-    ld (dccState.Size),a
-    ld a,255
-    ld (dccState.curDat),a
-    ld a,WAITCOUNT
-    ld (dccState.waitCTR),a
-
-    ex af,af'
-    xor a
-    ex af,af'
 	ei
-	ret
-	
-	
-	
-	
-	
-	
+	ret ;48 bytes
 
-dccSendLong3db:
+>>>>>>> dac1ff69333af1f7cd09c270ecc9b5ab9a38b1e2
+dccSendLongSpeed:
     ret ;To be done
-    
-
     
 generateLUT:  ;in: DE=starting address. Must be 256-byte aligned.
 	ld a,e
@@ -654,21 +466,13 @@ insertBitCont:
     
 .align 16     ;This needs an alignment due to how I handle indexing
 idlePacket:   ;Preformed idle packet
-.db 44
+.db 43
 .db %11111111
 .db %11111110
 .db %11111111
 .db %00000000
 .db %01111111
-.db %11100000
-estopPacket:
-.db 44
-.db %11111111
-.db %11111110
-.db %00000000
-.db %00100000
-.db %10010000
-.db %01110000
+.db %11000000
 .echoln "MODULE DCC  SIZE : ",$-_modulestart
 .endlocal
 .endmodule
