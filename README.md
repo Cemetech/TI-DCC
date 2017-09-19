@@ -1,19 +1,46 @@
 # TI-DCC
-Direct z80 ASM DCC implementation for the TI-84 Plus C Silver Edition and similar calculators.
+Is a z80 ASM NMRA-DCC throttle implementation for the TI-84 Plus C Silver Edition.
 
-Interrupt Documentation
------------------------
-1. Swap registers
-2. Output the accumulator to the link port
-3. Figure out what bit will be sent on the next iteration
-4. Swap the registers back
+## Features
+* Custom DCC throttle interface.  
+* FL-F26 Function support with momentary/locking functions  
+* 14/28/128 step speed modes  
+* 2 Digit and 4 Digit addressing
+ 
+## ToDo
+* Analog/DC throttle mode - To be implmented.
+* Verify 14/128 step speed modes
 
-Some notes from discussion:
-* Use memory and registers, don't try to register-juggle everything
-* Instead of trying to special-case the preamble and postamble, just make those bits part of
-  bytes and don't worry about byte alignment, then count bits instead of bytes for the loop,
-  and because max message size is ~6 bytes + preamble/postamble, we'll be able to fit the
-  bit count in an 8-bit register
-* Use bit-counting to figure out when we need to bump a pointer to the bytes of our packet
-  over to the next byte, load it, and start rotating it.
-* Will also need to handle rotating between multiple messages
+
+## Requirements
+### Building
+* Python 2.*
+* Pillow
+### Use
+* Motor driver - A motor driver/H-bridge and circuit used to generate the on rail signals for the train.
+* Power supply for the motor driver. Voltage is based off of the scale train you plan on controlling. See the NMRA Standards linked at the bottom of this readme
+
+
+## Known good motor drivers
+* LMD18200 using this circuit [MiniDCC](http://www.minidcc.com/minibooster.gif)
+
+## Installation 
+1) run _buildclean.bat
+2) Transfer application to calculator using TI-Connect or TILP
+
+## Controls
+### Configuration View
+* NumberPad: Set Addresss
+* F1-F3: set Speed steps mode
+* F4: Set DC Controll mode
+* F5: Save Changes
+### Controller View
+* Left/Right: Set Forward or Reverse movement
+* Up/Down: Adjust throttle
+* Number Pad: Control functions
+* F1-F3: Switch between function banks
+* CFG: Open configuration view
+* Lock: Allows changing of function type
+* Math: Quit
+* Enter: E-Stop
+* SIN: Change read out colors
