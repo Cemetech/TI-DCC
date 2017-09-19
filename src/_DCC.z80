@@ -580,9 +580,9 @@ dccSendLong3db:  ;in b,data hl,address c,repeat
 	dec hl
 	set 7,d
 	set 6,d
-	ld (hl),d    ;+3 Address High
+	ld (hl),e    ;+3 Address Low (stored big-endian)
 	dec hl
-	ld (hl),e    ;+2 Address Low
+	ld (hl),d    ;+2 Address High (stored big-endian)
 	dec hl
 	ld a,255
 	ld (hl),a    ;+1 Preamble
@@ -615,9 +615,9 @@ dccSendLong4db:  ;in de,data hl,address c,repeat
 	dec hl
 	set 7,d
 	set 6,d
-	ld (hl),d    ;+3 Address High
+	ld (hl),e    ;+3 Address Low (stored big-endian)
 	dec hl
-	ld (hl),e    ;+2 Address Low
+	ld (hl),d    ;+2 Address High (stored big-endian)
 	dec hl
 	ld a,255
 	ld (hl),a    ;+1 Preamble
