@@ -91,6 +91,14 @@ Refresh:
 	call UpdateSwitchState
 	call UpdateSwitchLock
 	call UpdateTabs
+	;--- draw "REV FWD" sign above arrows
+	ld a,IMGBANK
+	out (5),a
+	ld hl,157
+	ld a,23
+	ld bc,wh(revfwd_w,revfwd_h)
+	ld de,revfwd_a
+	call gfx.Sprite2BitNoclip
 	ret
 ;------------------------------------------------------------------------------------
 EventLoop:
@@ -116,19 +124,19 @@ EventLoop:
 +:	ld hl,_evl_nptable
 	cpir
 	jp z,_evl_numpad
-	;-- Up key [config: -- control: Move train forward]
-	cp skUp
-	jp z,_evl_upkey
-	;-- Down key [config: -- control: Move train in reverse]
-	cp skDown
-	jp z,_evl_downkey
-	;-- Left key [config: -- control: Decelerate train]
-	ld b,50  ;SHARED FOR L/R. DO NOT REMOVE
-	cp skLeft
-	jp z,_evl_leftkey
-	;-- Right key [config: -- control: Accelerate train]
+	;-- Right key [config: -- control: Move train forward]
 	cp skRight
 	jp z,_evl_rightkey
+	;-- Left key [config: -- control: Move train in reverse]
+	cp skLeft
+	jp z,_evl_leftkey
+	;-- Down key [config: -- control: Decelerate train]
+	ld b,50  ;SHARED FOR L/R. DO NOT REMOVE
+	cp skDown
+	jp z,_evl_downkey
+	;-- Up key [config: -- control: Accelerate train]
+	cp skUp
+	jp z,_evl_upkey
 	;-- Enter key [config: -- control: eStop command]
 	cp skEnter
 	jp z,_evl_enterkey
@@ -282,12 +290,13 @@ UpdateDirection:
 ;Note: down arrow size should be same as up arrow.
 ;      These routines assume IMGBANK has already been selected
 _drawarrowdownloc: ;DE = arrow sprite address. 
-	ld a,45
+	ld hl,158
 	jr {+}
 _drawarrowuploc:   ;DE = arrow sprite address
 	ld a,17  
+	ld hl,194
 +:	ld bc,wh(uparrowoff_w,uparrowoff_h)
-	ld hl,200
+	ld a,38
 	jp gfx.SpriteNoClip
 	
 UpdateKeyLabels:
@@ -466,6 +475,12 @@ _lbl_init_config:
 	ld bc,wh(help4_w,help4_h)
 	ld de,help4_a
 	call gfx.Sprite2BitNoclip
+	;Initialize/reset address data input
+	xor a
+	ld h,a
+	ld L,a
+	ld (curaddress),hl
+	ld (dispDigits),a
 	;add other active controls in setup which needs to be initialized
 	jp Refresh
 	

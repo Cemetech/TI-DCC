@@ -59,10 +59,10 @@ startApp:
 	ld (e_numpad),hl        ;numpad key press and release events
 	
     ld hl,dcc.handleReverser
-	ld (e_updown),hl   ;updown press event for forward/reverse
+	ld (e_leftright),hl   ;updown press event for forward/reverse
 	
 	ld hl,dcc.handleThrottle
-	ld (e_leftright),hl ;leftright press event for accel/decel
+	ld (e_updown),hl ;leftright press event for accel/decel
   
 	ld hl,dcc.handleCFG
 	ld (e_cfgack),hl    ;when user pushes OK on config screen

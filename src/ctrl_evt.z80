@@ -140,12 +140,12 @@ _evl_numpad_doconfig:
 	ld (dispDigits),a
 +:	jp _evloop_keywait_and_jumpback
 ;---
-_evl_upkey:
+_evl_rightkey:
 	dec e
-	jr nz,_evl_upkey_doconfig
-_evl_upkey_docontroller:
+	jr nz,_evl_rightkey_doconfig
+_evl_rightkey_docontroller:
 	ld a,DIR_FORWARD
-_evl_upkey_docontroller_collect:
+_evl_rightkey_docontroller_collect:
 	ld (direction),a
 	push af
 		call UpdateDirection
@@ -155,23 +155,23 @@ _evl_upkey_docontroller_collect:
 		ld a,(throttlemode)
 		ld d,a
 	pop af
-	ld hl,_evloop_keywait_and_jumpback \ push hl \ ld hl,(e_updown) \ jp (hl)
-_evl_upkey_doconfig:
-	jp _evloop_keywait_and_jumpback
-;---
-_evl_downkey:
-	dec e
-	jr nz,_evl_downkey_doconfig
-_evl_downkey_docontroller:
-	ld a,DIR_REVERSE
-	jr _evl_upkey_docontroller_collect
-_evl_downkey_doconfig:
+	ld hl,_evloop_keywait_and_jumpback \ push hl \ ld hl,(e_leftright) \ jp (hl)
+_evl_rightkey_doconfig:
 	jp _evloop_keywait_and_jumpback
 ;---
 _evl_leftkey:
 	dec e
 	jr nz,_evl_leftkey_doconfig
 _evl_leftkey_docontroller:
+	ld a,DIR_REVERSE
+	jr _evl_rightkey_docontroller_collect
+_evl_leftkey_doconfig:
+	jp _evloop_keywait_and_jumpback
+;---
+_evl_downkey:
+	dec e
+	jr nz,_evl_downkey_doconfig
+_evl_downkey_docontroller:
 	ld a,(direction)
 	add a,a
 	jp c,_evloop_keywait_and_jumpback
@@ -179,17 +179,17 @@ _evl_leftkey_docontroller:
 	dec a
 	jp m,_evloop_keywait_and_jumpback
 	ld (throttle),a
-	ld c,skLeft
+	ld c,skDown
 	call _evl_hold_throttle
-	jr z,_evl_leftkey_docontroller
+	jr z,_evl_downkey_docontroller
 	jp _evloop_keywait_and_jumpback
-_evl_leftkey_doconfig:
+_evl_downkey_doconfig:
 	jp _evloop_keywait_and_jumpback
 ;---
-_evl_rightkey:
+_evl_upkey:
 	dec e
-	jr nz,_evl_rightkey_doconfig
-_evl_rightkey_docontroller:
+	jr nz,_evl_upkey_doconfig
+_evl_upkey_docontroller:
 	ld a,(direction)
 	add a,a
 	jp c,_evloop_keywait_and_jumpback
@@ -202,11 +202,11 @@ _evl_rightkey_docontroller:
 	cp (hl)
 	jp nc,_evloop_keywait_and_jumpback
 	ld (throttle),a
-	ld c,skRight
+	ld c,skUp
 	call _evl_hold_throttle
-	jr z,_evl_rightkey_docontroller
+	jr z,_evl_upkey_docontroller
 	jp _evloop_keywait_and_jumpback
-_evl_rightkey_doconfig:
+_evl_upkey_doconfig:
 	jp _evloop_keywait_and_jumpback
 ;---
 ;This event can occur regardless of mode.
@@ -317,7 +317,7 @@ _evl_hold_throttle:
 	push bc
 		ld hl,{+}
 		push hl
-		ld hl,(e_leftright)
+		ld hl,(e_updown)
 		jp (hl)
 +:	pop bc
 	call kbd.gsGetCSC
