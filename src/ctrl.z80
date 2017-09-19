@@ -58,7 +58,12 @@ Initialize:
 	ld de,temp+1
 	ld bc,(e_numpad-temp)-1
 	ld (hl),$00
-	ldir
+	ldir                  ;clears off all interface data
+;	ld hl,bankdata
+;	ld de,bankdata+1
+;	ld bc,bankdata_size-1
+;	ld (hl),1<<C_NOTMOMENTARY
+;	ldir                  ;this is actually done when users leaves config
 	ld hl,e_numpad
 	ld de,DefaultControllerCallback
 	ld b,(e_nullevent-e_numpad)/2

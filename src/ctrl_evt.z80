@@ -31,7 +31,7 @@ _evl_graphkey_doconfig:
 	ld hl,bankdata
 	ld de,bankdata+1
 	ld bc,bankdata_size-1
-	ld (hl),a
+	ld (hl),1<<C_NOTMOMENTARY
 	ldir
 	ld a,1
 	ld (menumode),a
