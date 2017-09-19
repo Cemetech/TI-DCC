@@ -458,31 +458,29 @@ _hnp_construct_from_bank:
 	
 	
 	
-    
+;in:  E = bytes in packet
 PreparePacket:
-    ;In e,amount of bytes in packet
-    ;packetGenScratch packet bytes
-    ld b,e                 ;save bytes in structure
-    sla e \ sla e \ sla e  ; *8 == bitcount
-    dec b                  ;ASSUME first byte is part of the preamble and gets no seperator
-                           ; we loop from packet end
-    ld hl,packetGenScratch  
-    ld c,$FF
+	ld d,0
+	ld hl,packetGenScratch
+	add hl,de
+	ld (hl),$80  ;append set bit to end of packet stream
+	dec e
+	ld b,e
+	dec b        ;sub 1 to prevent inserting a zero between the two preamble bytes
 _preparePacketLoop:
-    push de
-        push bc
-            push hl             ;Move in 8bits and insert next bit
-                call insertBit  ;Call insert bits saving all registers
-            pop hl
-        pop bc
-    pop de
-    ld a,e
-    sub 8
-    ld e,a            ;Move to next byte
-    ld c,0              ;Set c to insert 0 bits
-    djnz _preparePacketLoop
-    ret
-    
+	ld a,e       ;total bytes unadjusted
+	sub b        ;get bytes remain (grows) in A for shift loop
+	dec hl       ;the op above will always result in NC, so no need for a "or a"
+	rr (hl)      ;start the initial shift right while inserting a '0' bit.
+	push hl
+_preparePacketSubloop:
+		inc hl
+		rr (hl)
+		dec a
+		jr nz,_preparePacketSubloop
+	pop hl
+	djnz _preparePacketLoop
+	ret
 	
 	
 	
@@ -601,56 +599,6 @@ _genLutNoShift:
 	jr nz,generateLUT
 	ret
     
-;E = bitpos to insert
-;C=0 to insert 0, C=$FF to insert 1. Destroys all registers
-insertBit:  
-    ld a,8*10
-    ld (maxbits),a
-	ld d,BitMask_LookupTables>>8
-	ld a,(de)
-	inc d       ;First LUT is: for(i=0;i<256;i++) arr1[i] = (i>>3)&7;
-	add a,L
-	ld L,a
-	jr nc,$+3
-	inc h       ;get address we need to perform insert op on
-	inc c
-	ld a,(de)   ;fetch masking bit. for(i=0;i<256;i++) arr2[i] = 1<<((~i)&7);
-	jr z,insertBit1
-insertBit0:
-	cpl
-	and (hl)    ;clear bit.
-	ld (hl),a
-	jr insertBitCont
-insertBit1:
-	or (hl)
-	ld (hl),a   ;set bit
-insertBitCont:
-	inc d       ;Third LUT: Mask to keep bits. 7=%01111111 0=%00000000
-	ld a,(maxbits)
-	inc a
-	ld (maxbits),a
-	sub e       ;maxbits-bitcount
-	rrca
-	rrca
-	rrca
-	and %00011111
-	inc a
-	ld b,a     ;max number of bytes to iterate over
-	ld a,(de)
-	cpl        ;we may have needed those bits reversed. 1's are what we keep with old
-	ld c,a
-	ld a,(hl)
-	rrc (hl)
-	push af   ;keep bit that was pushed out retained
-		xor (hl)  ;mask in old state
-		and c
-		xor (hl)
-		ld (hl),a
-	pop af
--:	inc hl
-	rr (hl)
-	djnz {-}
-	ret
     
 .align 16     ;This needs an alignment due to how I handle indexing
 idlePacket:   ;Preformed idle packet
