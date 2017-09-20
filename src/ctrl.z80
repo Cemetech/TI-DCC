@@ -162,7 +162,11 @@ EventLoop:
 	dec a
 	jr z,{+}
 	call UpdateAddress  ;to keep the cursor running in config mode
-+:	jp EventLoop
++:	;-- Exit event loop in case the battery runs low
+	in a,(2)
+	and 1
+	ret z
+	jp EventLoop
 	
 _evloop_keywait_and_jumpback:
 	call kbd.keyWait
