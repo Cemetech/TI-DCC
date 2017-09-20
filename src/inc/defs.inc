@@ -77,13 +77,13 @@ HELPBANK .equ 4
 .define XLC_RED $E0
 .define XLC_GREEN $07
 .define XLC_BLUE $18
-.define XLC_DARKRED $20
-.define XLC_DARKBLUE $08
+.define XLC_DARKRED $40
+.define XLC_DARKBLUE $10
 .define XLC_DARKGREEN $01
 .define XLC_DARKYELLOW $41
 .define XLC_WHITE $FF
 .define XLC_SEGBLUE $17
-.define XLC_SEGRED $E0
+.define XLC_SEGRED $E1
 .define XLC_SEGGREEN $66
 .define XLC_SEGAMBER $E5
 
