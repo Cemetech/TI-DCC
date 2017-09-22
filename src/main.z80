@@ -38,6 +38,10 @@ startApp:
 	call gfx.FillScreen
 	;malloc memory to userMem for nonbankable scratch RAM
 	ld hl,NONPAGED_MEMORY_SIZE
+	push hl
+		bcall(_EnoughMem)
+	pop hl
+	jp c,exitApp      ;kill the application if not enough mem available for nonpaged
 	ld de,userMem     ; $A60B
 	bcall(_InsertMem)
 	;buffers image data
