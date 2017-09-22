@@ -14,3 +14,11 @@ Changes made to TI-DCC specifically for Maker Faire
 6. [MATH] key no longer exits the app. You must hit the reset
    button on the back of the calculator to quit the app.
    This effectively puts the app into demonstration mode.
+7. Function banks 2 and 3 have been disabled. The changes that
+   made this possible are immediately after the label
+   _evl_fnbanks_docontroller in ctrl_evt.z80
+8. CFG button has been disabled. I did this by commenting out lines after
+   _evl_tracekey_docontroller in ctrl_evt.z80
+   
+   
+   

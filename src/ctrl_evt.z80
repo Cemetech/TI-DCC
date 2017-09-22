@@ -4,6 +4,8 @@ _evl_fnbanks:
 	dec e
 	jr nz,_evl_fnbanks_doconfig
 _evl_fnbanks_docontroller:
+	or a                                ;These were added to prevent function bank
+	jr nz,_evloop_keywait_and_jumpback  ;switching for Maker Faire version.
 	ld (curbank),a
 	call UpdateKeyLabels
 	call UpdateSwitchState
@@ -57,10 +59,10 @@ _evl_tracekey:
 	dec e
 	jr nz,_evl_tracekey_doconfig
 _evl_tracekey_docontroller:
-	xor a
-	ld (menumode),a
-	ld (tabflags),a
-	call _lbl_init_config
+;	xor a
+;	ld (menumode),a
+;	ld (tabflags),a
+;	call _lbl_init_config
 	jp _evloop_keywait_and_jumpback
 _evl_tracekey_doconfig:
 	ld a,(enableDCmode)
