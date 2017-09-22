@@ -1,0 +1,16 @@
+Changes made to TI-DCC specifically for Maker Faire
+
+1. Default address is 3 as defined near the top of
+   main.z80 in DEFAULT_DCC_ADDRESS
+2. Default function states defined in table near bottom of
+   ctrl_evt.z80 after the label _evl_default_bankdata
+3. Default throttle mode is 28-speed defined near the top of
+   main.z80 in DEFAULT_DCC_ADDRESS
+4. LOCK button functionality in controller view has been removed.
+   Code in ctrl_evt.z80 at label _evl_graphkey_docontroller was
+   commented out to make that happen.
+5. Application name was changed from "TI-DCC" to "TI-DCC-F" to
+   make it clear that this build is for Maker Faire.
+6. [MATH] key no longer exits the app. You must hit the reset
+   button on the back of the calculator to quit the app.
+   This effectively puts the app into demonstration mode.

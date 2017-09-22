@@ -19,19 +19,18 @@ _evl_graphkey:
 	dec e
 	jr nz,_evl_graphkey_doconfig
 _evl_graphkey_docontroller:
-	ld a,(tabflags)
-	xor %00010000
-	ld (tabflags),a
-	call UpdateTabs
+;	ld a,(tabflags)
+;	xor %00010000
+;	ld (tabflags),a
+;	call UpdateTabs
 	jp _evloop_keywait_and_jumpback
 _evl_graphkey_doconfig:
 	xor a
 	ld (throttle),a
 	ld (tabflags),a
-	ld hl,bankdata
-	ld de,bankdata+1
+	ld hl,_evl_default_bankdata
+	ld de,bankdata
 	ld bc,bankdata_size-1
-	ld (hl),1<<C_NOTMOMENTARY
 	ldir
 	ld a,1
 	ld (menumode),a
@@ -325,4 +324,56 @@ _evl_hold_throttle:
 	ld b,10
 	ret
 	
+	
+	
+	
+_evl_default_bankdata:
+;
+;           /-- 0: default momentary, 1: default locked
+;          | /- 0: default off, 1: default on
+;          VV
+.db %00000000  ;FL/F0
+.db %00000000  ;F1
+.db %00000000  ;F2
+.db %00000000  ;F3
+.db %00000000  ;F4
+.db %00000000  ;F5
+.db %00000000  ;F6
+.db %00000000  ;F7
+.db %00000000  ;F8
+.db %00000000  ;F9
+.db %00000000  ;F10
+.db %00000000  ;F11
+.db %00000000  ;F12
+.db %00000000  ;F13
+.db %00000000  ;F14
+.db %00000000  ;F15
+.db %00000000  ;F16
+.db %00000000  ;F17
+.db %00000000  ;F18
+.db %00000000  ;F19
+.db %00000000  ;F20
+.db %00000000  ;F21
+.db %00000000  ;F22
+.db %00000000  ;F23
+.db %00000000  ;F24
+.db %00000000  ;F25
+.db %00000000  ;F26
+.db %00000000  ;F27
+.db %00000000  ;F28
+.db %00000000  ;F29
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
