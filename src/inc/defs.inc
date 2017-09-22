@@ -65,6 +65,8 @@ allocMem(1,ytemp)
 
 allocMem(1,gs_keymem)
 
+allocMem(2,fillsegtemp)
+
 
 
 IMGBANK  .equ 4

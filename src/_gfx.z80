@@ -5,6 +5,7 @@ _modulestart:
 ;------------------
 Start:
 	call SetLcdWindowFull
+ReinitScreenmode:
 	ld hl,incmode(INCR)+wrapmode(INCR)+movemode(HORIZ)+bgrmode(1)+origin(1)
 	ld a,3
 	jp _setlcdreg
@@ -54,6 +55,62 @@ FillRect:  ;HL=X, A=Y, C=width-1, B=height-1, D=color
 	inc b
 	jp nc,_fillareaaligned
 	jp _fillareaunaligned
+;------------------
+;NOTE: Base segment rectangle is always 64 pixels. DO NOT CHANGE SEGMENT AREA
+FillSegment:  ;HL=X, A=Y, C=width-1, B=height-1, D=color
+	push hl
+		ld e,a    ;preserve A in E
+		ld a,b
+		cp c  ;h-w. carry if the box is wider than it is tall
+		jr c,_fillseg_widebox_mode
+_fillseg_tallbox_mode:
+		ld hl,incmode(INCR)+wrapmode(INCR)+movemode(HORIZ)+bgrmode(1)+origin(1)
+		dec e
+		inc b
+		inc b
+		jr _fillseg_modecollect
+_fillseg_widebox_mode:
+		ld hl,incmode(INCR)+wrapmode(INCR)+movemode(VERT)+bgrmode(1)+origin(1)
+		ex (sp),hl
+		dec hl
+		ex (sp),hl
+		inc c
+		inc c
+_fillseg_modecollect:
+		ld a,3
+		push bc
+			call _setlcdreg
+		pop bc
+	pop hl
+	push de
+		ld a,e
+		call _setrectregion ;HL=X, A=Y, C=width-1, B=height-1
+		ld a,$22
+		out ($10),a
+		out ($10),a         ;set LCD write mode
+	pop de
+	call _fillseg_corner
+	ld a,d
+	ld bc,(64/2)+256
+	call _fillareaaligned
+	ld a,d
+	call _fillseg_corner
+	jp ReinitScreenmode
+	
+_fillseg_corner:
+	xor a
+	out ($11),a
+	out ($11),a
+	ld a,d
+	out ($11),a
+	out ($11),a
+	out ($11),a
+	out ($11),a
+	xor a
+	out ($11),a
+	out ($11),a
+	ret
+		
 ;------------------
 ;NOTE: SPRITE IS ASSUMED TO BE IN CURRENT MEMORY BANK ON INVOCATION
 SpriteNoclip:  ;HL=X, A=Y, C=width-1, B=height-1, DE=spriteaddr
@@ -146,7 +203,10 @@ _setrectregion: ;HL=X, A=Y, C=width-1, B=height-1
 	call _setlcdreg  ;Ymax
 	ld a,$20
 	ld hl,0
-	jp _setlcdreg    ;reset cursor by writing to curX in origin mode
+	call _setlcdreg    ;reset cursor by writing to curX in origin mode
+	ld a,$21
+	ld hl,0
+	jp _setlcdreg    ;reset cursor by writing to curY in origin mode
 ;------------------
 
 SetLcdWindowFull:
