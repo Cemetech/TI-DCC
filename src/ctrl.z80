@@ -595,13 +595,13 @@ _draw7seg:
 	call _drawseg
 	ld de,4
 	add hl,de
-	ld bc,wh(16,5)
+	ld bc,wh(16,4)
 	ld e,21
 	call _drawseg
-	ld bc,wh(16,5)
+	ld bc,wh(16,4)
 	ld e,41
 	call _drawseg
-	ld bc,wh(16,5)
+	ld bc,wh(16,4)
 	ld e,61
 	call _drawseg
 	ld de,16
@@ -619,7 +619,7 @@ _drawseg:  ;HL=X, BC=WH, E=Y
 			ld de,(segcolors)
 			jr nc,{+}
 			ld d,e
-+:			call gfx.FillRect
++:			call gfx.FillSegment
 		pop af
 	pop hl
 	ret
