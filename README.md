@@ -10,11 +10,12 @@ Is a z80 ASM NMRA-DCC throttle implementation for the TI-84 Plus C Silver Editio
 ## ToDo
 * Analog/DC throttle mode - To be implmented.
 * Verify 14/128 step speed modes
-
+* Verify Long addresses work
+* Finish Reccomended schematic
 
 ## Requirements
 ### Building
-* Python 2.*
+* Python 2.* and the python launcher. (comes with py3...)
 * Pillow
 ### Use
 * Motor driver - A motor driver/H-bridge and circuit used to generate the on rail signals for the train.
@@ -44,3 +45,8 @@ Is a z80 ASM NMRA-DCC throttle implementation for the TI-84 Plus C Silver Editio
 * Math: Quit
 * Enter: E-Stop
 * SIN: Change read out colors
+
+
+## References
+* Forum Topic: http://cemete.ch/p261712
+* NMRA Documentation: https://www.nmra.org/index-nmra-standards-and-recommended-practices	
