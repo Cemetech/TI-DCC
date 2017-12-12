@@ -1,3 +1,6 @@
 /bin
 /obj
 /tools/*.pyc
+/Controller/_autosave-Controller.kicad_pcb
+/Controller/Controller.kicad_pcb-bak
+/Controller/_saved_Controller.sch

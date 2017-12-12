@@ -1,4 +1,4 @@
-update=8/12/2017 1:16:06 PM
+update=12/10/2017 2:02:33 PM
 version=1
 last_client=kicad
 [pcbnew]
@@ -59,3 +59,13 @@ LibName27=atmel
 LibName28=contrib
 LibName29=valves
 LibName30=C:/Program Files/KiCad/share/kicad/library/LMD18200T
+[schematic_editor]
+version=1
+PageLayoutDescrFile=
+PlotDirectoryName=r:/
+SubpartIdSeparator=0
+SubpartFirstId=65
+NetFmtName=
+SpiceAjustPassiveValues=0
+LabSize=60
+ERC_TestSimilarLabels=1
