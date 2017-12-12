@@ -1,7 +1,7 @@
 (export (version D)
   (design
     (source F:\Documents\Ti-DCC\Controller\Controller.sch)
-    (date "12/11/2017 7:15:08 PM")
+    (date "12/12/2017 4:19:41 PM")
     (tool "Eeschema (2017-11-09 revision 87d06e526)-makepkg")
     (sheet (number 1) (name /) (tstamps /)
       (title_block
@@ -91,7 +91,7 @@
       (tstamp 5A2DBB14))
     (comp (ref C4)
       (value 1000uf)
-      (footprint Capacitors_THT:C_Disc_D4.7mm_W2.5mm_P5.00mm)
+      (footprint Capacitors_THT:CP_Radial_D10.0mm_P5.00mm)
       (libsource (lib device) (part CP1_Small))
       (sheetpath (names /) (tstamps /))
       (tstamp 5A2DC31F))
