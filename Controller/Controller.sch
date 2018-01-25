@@ -1,34 +1,4 @@
-EESchema Schematic File Version 3
-LIBS:power
-LIBS:device
-LIBS:transistors
-LIBS:conn
-LIBS:linear
-LIBS:regul
-LIBS:74xx
-LIBS:cmos4000
-LIBS:adc-dac
-LIBS:memory
-LIBS:xilinx
-LIBS:microcontrollers
-LIBS:dsp
-LIBS:microchip
-LIBS:analog_switches
-LIBS:motorola
-LIBS:texas
-LIBS:intel
-LIBS:audio
-LIBS:interface
-LIBS:digital-audio
-LIBS:philips
-LIBS:display
-LIBS:cypress
-LIBS:siliconi
-LIBS:opto
-LIBS:atmel
-LIBS:contrib
-LIBS:valves
-LIBS:LMD18200T
+EESchema Schematic File Version 4
 LIBS:Controller-cache
 EELAYER 26 0
 EELAYER END
@@ -45,7 +15,7 @@ Comment3 "Based off of MiniDCC LMD18200 Booster"
 Comment4 ""
 $EndDescr
 $Comp
-L LMD18200T U2
+L LMD18200T:LMD18200T U2
 U 1 1 598F37E3
 P 5900 4000
 F 0 "U2" H 5691 4539 50  0000 L BNN
@@ -61,7 +31,7 @@ F 8 "TO-220 Texas Instruments" H 5900 4000 50  0001 L BNN "Package"
 	1    0    0    -1  
 $EndComp
 $Comp
-L C C1
+L device:C C1
 U 1 1 598F399B
 P 4200 3700
 F 0 "C1" H 4225 3800 50  0000 L CNN
@@ -72,7 +42,7 @@ F 3 "" H 4200 3700 50  0001 C CNN
 	0    1    1    0   
 $EndComp
 $Comp
-L C C2
+L device:C C2
 U 1 1 598F39E1
 P 4200 4200
 F 0 "C2" H 4225 4300 50  0000 L CNN
@@ -103,7 +73,7 @@ Wire Wire Line
 Wire Wire Line
 	7200 3900 7500 3900
 $Comp
-L R R2
+L device:R R2
 U 1 1 598F3B8D
 P 8200 4200
 F 0 "R2" V 8280 4200 50  0000 C CNN
@@ -116,7 +86,7 @@ $EndComp
 Wire Wire Line
 	7200 4200 8050 4200
 $Comp
-L LED D1
+L device:LED D1
 U 1 1 598F3BD0
 P 8650 4200
 F 0 "D1" H 8650 4300 50  0000 C CNN
@@ -131,7 +101,7 @@ Wire Wire Line
 Wire Wire Line
 	3350 4000 4600 4000
 $Comp
-L +5V #PWR012
+L power:+5V #PWR012
 U 1 1 598FAED1
 P 4500 4100
 F 0 "#PWR012" H 4500 3950 50  0001 C CNN
@@ -144,7 +114,7 @@ $EndComp
 Wire Wire Line
 	4500 4100 4600 4100
 $Comp
-L GND #PWR011
+L power:GND #PWR011
 U 1 1 598FAFBF
 P 4450 4850
 F 0 "#PWR011" H 4450 4600 50  0001 C CNN
@@ -157,7 +127,7 @@ $EndComp
 Wire Wire Line
 	4450 4600 4600 4600
 $Comp
-L +12V #PWR010
+L power:+12V #PWR010
 U 1 1 598FAFEF
 P 4350 4500
 F 0 "#PWR010" H 4350 4350 50  0001 C CNN
@@ -172,7 +142,7 @@ Wire Wire Line
 Wire Wire Line
 	7200 4300 7850 4300
 $Comp
-L R R1
+L device:R R1
 U 1 1 598FCAFD
 P 7850 4600
 F 0 "R1" V 7930 4600 50  0000 C CNN
@@ -183,7 +153,7 @@ F 3 "" H 7850 4600 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR013
+L power:GND #PWR013
 U 1 1 598FCB20
 P 7850 4750
 F 0 "#PWR013" H 7850 4500 50  0001 C CNN
@@ -194,7 +164,7 @@ F 3 "" H 7850 4750 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L LM7805_TO220 U1
+L regul:LM7805_TO220 U1
 U 1 1 5A2D8024
 P 2350 800
 F 0 "U1" H 2350 1042 50  0000 C CNN
@@ -205,7 +175,7 @@ F 3 "http://www.fairchildsemi.com/ds/LM/LM7805.pdf" H 2350 750 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR02
+L power:GND #PWR02
 U 1 1 5A2D8293
 P 1100 1000
 F 0 "#PWR02" H 1100 750 50  0001 C CNN
@@ -216,7 +186,7 @@ F 3 "" H 1100 1000 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L +12V #PWR01
+L power:+12V #PWR01
 U 1 1 5A2D8302
 P 750 850
 F 0 "#PWR01" H 750 700 50  0001 C CNN
@@ -227,7 +197,7 @@ F 3 "" H 750 850 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L +5V #PWR05
+L power:+5V #PWR05
 U 1 1 5A2D86C1
 P 2800 800
 F 0 "#PWR05" H 2800 650 50  0001 C CNN
@@ -240,7 +210,7 @@ $EndComp
 Wire Wire Line
 	2800 800  2650 800 
 $Comp
-L GND #PWR04
+L power:GND #PWR04
 U 1 1 5A2D872D
 P 2350 1150
 F 0 "#PWR04" H 2350 900 50  0001 C CNN
@@ -251,7 +221,7 @@ F 3 "" H 2350 1150 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L +12V #PWR03
+L power:+12V #PWR03
 U 1 1 5A2D87AB
 P 1750 800
 F 0 "#PWR03" H 1750 650 50  0001 C CNN
@@ -262,9 +232,9 @@ F 3 "" H 1750 800 50  0001 C CNN
 	0    -1   -1   0   
 $EndComp
 Wire Wire Line
-	1750 800  2050 800 
+	1750 800  1950 800 
 $Comp
-L +5V #PWR014
+L power:+5V #PWR014
 U 1 1 5A2D88F2
 P 8950 4050
 F 0 "#PWR014" H 8950 3900 50  0001 C CNN
@@ -277,7 +247,7 @@ $EndComp
 Wire Wire Line
 	8950 4200 8800 4200
 $Comp
-L PWR_FLAG #FLG02
+L power:PWR_FLAG #FLG02
 U 1 1 5A2D8DEB
 P 1100 850
 F 0 "#FLG02" H 1100 925 50  0001 C CNN
@@ -290,7 +260,7 @@ $EndComp
 Wire Wire Line
 	1100 850  1100 1000
 $Comp
-L PWR_FLAG #FLG01
+L power:PWR_FLAG #FLG01
 U 1 1 5A2D8E62
 P 750 1000
 F 0 "#FLG01" H 750 1075 50  0001 C CNN
@@ -307,7 +277,7 @@ Wire Wire Line
 Wire Wire Line
 	8950 4050 8950 4200
 $Comp
-L GND #PWR06
+L power:GND #PWR06
 U 1 1 5A2D91B2
 P 3350 4150
 F 0 "#PWR06" H 3350 3900 50  0001 C CNN
@@ -328,56 +298,45 @@ Current_Sense
 Wire Wire Line
 	7850 4300 7850 4450
 $Comp
-L CONN_01X02 J3
-U 1 1 5A2D9689
-P 5650 1200
-F 0 "J3" H 5727 1241 50  0000 L CNN
-F 1 "DCC" H 5727 1150 50  0000 L CNN
-F 2 "w_conn_pt-1,5:pt_1,5-2-3,5-h" H 5650 1200 50  0001 C CNN
-F 3 "" H 5650 1200 50  0001 C CNN
-	1    5650 1200
-	1    0    0    -1  
-$EndComp
-$Comp
-L CONN_01X02 J2
+L conn:Conn_01x02 J2
 U 1 1 5A2D970D
-P 5650 850
-F 0 "J2" H 5727 891 50  0000 L CNN
-F 1 "Track" H 5727 800 50  0000 L CNN
-F 2 "w_conn_pt-1,5:pt_1,5-2-3,5-h" H 5650 850 50  0001 C CNN
-F 3 "" H 5650 850 50  0001 C CNN
-	1    5650 850 
+P 5950 800
+F 0 "J2" H 6027 841 50  0000 L CNN
+F 1 "Track" H 6027 750 50  0000 L CNN
+F 2 "Geekboy:pt_1,5-2-3,5-h" H 5950 800 50  0001 C CNN
+F 3 "" H 5950 800 50  0001 C CNN
+	1    5950 800 
 	1    0    0    -1  
 $EndComp
 $Comp
-L CONN_01X03 J1
+L conn:Conn_01x03 J1
 U 1 1 5A2D97C5
 P 4350 950
 F 0 "J1" H 4428 991 50  0000 L CNN
 F 1 "Power" H 4428 900 50  0000 L CNN
-F 2 "w_conn_pt-1,5:pt_1,5-3-3,5-h" H 4350 950 50  0001 C CNN
+F 2 "Geekboy:pt_1,5-3-3,5-h" H 4350 950 50  0001 C CNN
 F 3 "" H 4350 950 50  0001 C CNN
 	1    4350 950 
 	1    0    0    -1  
 $EndComp
-Text Label 5100 800  0    60   ~ 0
+Text Label 5400 800  0    60   ~ 0
 Track1
 Wire Wire Line
-	5450 800  5100 800 
-Text Label 5100 900  0    60   ~ 0
+	5750 800  5400 800 
+Text Label 5400 900  0    60   ~ 0
 Track2
 Wire Wire Line
-	5100 900  5450 900 
-Text Label 5000 1150 0    60   ~ 0
+	5400 900  5750 900 
+Text Label 4850 1000 0    60   ~ 0
 Direction
 Wire Wire Line
-	5000 1150 5450 1150
-Text Label 4800 1250 0    60   ~ 0
+	4850 1000 5300 1000
+Text Label 4650 1100 0    60   ~ 0
 Current_Sense
 Wire Wire Line
-	4800 1250 5450 1250
+	4650 1100 5300 1100
 $Comp
-L +12V #PWR08
+L power:+12V #PWR08
 U 1 1 5A2DA022
 P 4000 800
 F 0 "#PWR08" H 4000 650 50  0001 C CNN
@@ -392,7 +351,7 @@ Wire Wire Line
 Wire Wire Line
 	4000 850  4150 850 
 $Comp
-L +5V #PWR07
+L power:+5V #PWR07
 U 1 1 5A2DA0B7
 P 3800 800
 F 0 "#PWR07" H 3800 650 50  0001 C CNN
@@ -407,7 +366,7 @@ Wire Wire Line
 Wire Wire Line
 	3800 950  4150 950 
 $Comp
-L GND #PWR09
+L power:GND #PWR09
 U 1 1 5A2DA14F
 P 4050 1150
 F 0 "#PWR09" H 4050 900 50  0001 C CNN
@@ -444,7 +403,7 @@ Board Connectors
 Text Notes 6700 5500 0    60   ~ 0
 LMD18200 Booster
 $Comp
-L C C3
+L device:C C3
 U 1 1 5A2DBB14
 P 2800 1000
 F 0 "C3" H 2915 1046 50  0000 L CNN
@@ -455,11 +414,11 @@ F 3 "" H 2800 1000 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	1750 1150 2800 1150
+	1750 1150 1950 1150
 Wire Wire Line
 	2800 800  2800 850 
 $Comp
-L CP1_Small C4
+L device:CP1_Small C4
 U 1 1 5A2DC31F
 P 1750 1000
 F 0 "C4" H 1600 1100 50  0000 L CNN
@@ -481,7 +440,7 @@ Wire Wire Line
 	1750 1100 1750 1150
 Connection ~ 1950 1150
 $Comp
-L C_Small C5
+L device:C_Small C5
 U 1 1 5A2DC812
 P 1950 1000
 F 0 "C5" H 1950 1100 50  0000 L CNN
@@ -491,4 +450,38 @@ F 3 "" H 1950 1000 50  0001 C CNN
 	1    1950 1000
 	1    0    0    -1  
 $EndComp
+Wire Wire Line
+	2350 1150 2800 1150
+Wire Wire Line
+	1950 800  2050 800 
+Wire Wire Line
+	1950 1150 2350 1150
+$Comp
+L conn:Conn_01x03 J3
+U 1 1 5A9E104B
+P 5500 1100
+F 0 "J3" H 5578 1141 50  0000 L CNN
+F 1 "DCC" H 5578 1050 50  0000 L CNN
+F 2 "Geekboy:pt_1,5-3-3,5-h" H 5500 1100 50  0001 C CNN
+F 3 "" H 5500 1100 50  0001 C CNN
+	1    5500 1100
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR015
+U 1 1 5A9E2602
+P 5150 1200
+F 0 "#PWR015" H 5150 950 50  0001 C CNN
+F 1 "GND" H 5155 1027 50  0000 C CNN
+F 2 "" H 5150 1200 50  0001 C CNN
+F 3 "" H 5150 1200 50  0001 C CNN
+	1    5150 1200
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	6050 3450 12300 3450
+Wire Wire Line
+	12300 3450 12300 2700
+Wire Wire Line
+	5150 1200 5300 1200
 $EndSCHEMATC
