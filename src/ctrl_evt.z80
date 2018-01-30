@@ -1,10 +1,14 @@
 ;---
 _evl_fnbanks:
+	jp nz,_evloop_keywait_and_jumpback
 	ld a,c
 	dec e
 	jr nz,_evl_fnbanks_doconfig
 _evl_fnbanks_docontroller:
 	ld (curbank),a
+	ld a,(enableDCmode)
+	or a
+	jp nz,_evloop_keywait_and_jumpback
 	call UpdateKeyLabels
 	call UpdateSwitchState
 	call UpdateSwitchLock
@@ -19,6 +23,9 @@ _evl_graphkey:
 	dec e
 	jr nz,_evl_graphkey_doconfig
 _evl_graphkey_docontroller:
+	ld a,(enableDCmode)
+	or a
+	jp nz,_evloop_keywait_and_jumpback
 	ld a,(tabflags)
 	xor %00010000
 	ld (tabflags),a
@@ -67,10 +74,18 @@ _evl_tracekey_doconfig:
 	ld a,(enableDCmode)
 	xor 1
 	ld (enableDCmode),a
-	call UpdateTabs2
+	ld hl,{+}
+	push hl
+	ld hl,(e_dcmode)
+	jp (hl)
++:	call UpdateTabs2
 	jp _evloop_keywait_and_jumpback
 ;---
 _evl_numpad:
+	ld hl,enableDCmode
+	inc (hl)
+	dec (hl)  ;NZ if enabled. If it's enabled, quit now (do not process numkeys)
+	jp nz,_evloop_keywait_and_jumpback
 	dec e
 	jr nz,_evl_numpad_doconfig
 _evl_numpad_docontroller:

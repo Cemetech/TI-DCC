@@ -56,8 +56,12 @@ e_cfgack	-	Triggers whenever the user hits the "OK" button on the
 e_estop		-	Called when the emergency stop button has been pushed.
 				No further inputs provided.
 				
+e_dcmode	-	Called when the DC mode variable has changed.
 				
-				
+				Registers on entry:
+				A = DC Mode
+					0 = has been disabled.
+					1 = has been enabled.
 				
 				
 _______________________________________

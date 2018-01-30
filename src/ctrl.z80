@@ -36,8 +36,12 @@ _modulestart:
 ;e_estop - Called when the emergency stop button has been pushed.
 ;          On entry:   None
 ;
-;
-;
+;e_dcmode	-	Called when the DC mode variable has changed.
+;				
+;				Registers on entry:
+;				A = DC Mode
+;					0 = has been disabled.
+;					1 = has been enabled.
 ;
 
 
@@ -87,10 +91,13 @@ Refresh:
 +:	call UpdateAddress
 	call UpdateThrottle
 	call UpdateDirection
+	ld a,(enableDCmode)
+	or a
+	jr nz,{+}
 	call UpdateKeyLabels
 	call UpdateSwitchState
 	call UpdateSwitchLock
-	call UpdateTabs
++:	call UpdateTabs
 	;--- draw "REV FWD" sign above arrows
 	ld a,IMGBANK
 	out (5),a
@@ -208,6 +215,9 @@ _drawtabs:  ;C = bitfield for active tabs
 UpdateAddress:
 	ld ix,8
 	ld hl,(curaddress)
+	ld a,(enableDCmode)
+	or a
+	jr nz,_updateaddress_dcmode
 	ld a,(menumode)
 	dec a
 	jp z,_draw7seg5num
@@ -252,6 +262,22 @@ _upadr_numtable:
 .dw -100
 .dw -10
 .dw -1
+_updateaddress_dcmode:
+	xor a
+	call {++}  \ call _draw7seg
+	xor a
+	call {+}   \ call _draw7seg
+	ld a,%01111010 ;'d'
+	call {+}   \ call _draw7seg
+	ld a,%00011010
+	call {+}   \ call _draw7seg
+	xor a
+	call {+}   \ jp _draw7seg
++:	ld de,28
+	add ix,de
+++:	push ix
+	pop hl
+	ret
 	
 	
 UpdateThrottle:
@@ -387,6 +413,9 @@ UpdateTabs2:
 	ld a,(throttlemode)
 	jr {+}
 UpdateTabs:
+	ld a,(enableDCmode)
+	dec a
+	jr z,{+}+1
 	ld a,(curbank)
 +:	inc a
 	ld b,a
@@ -490,7 +519,9 @@ _lbl_init_config:
 	
 _lbl_init_controller:
 	call _lbl_coverup_everything_else
-	call _lbl_keysprites
+	ld a,(enableDCmode)
+	or a
+	call z,_lbl_keysprites
 	ld a,TABBANK
 	ld hl,imgbank2_c
 	call dpk.depackToBank

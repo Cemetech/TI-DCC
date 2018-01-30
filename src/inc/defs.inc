@@ -53,6 +53,7 @@ allocMem(2,e_updown)
 allocMem(2,e_leftright)
 allocMem(2,e_cfgack)
 allocMem(2,e_estop)
+allocMem(2,e_dcmode)
 ;---
 ;insert any new events for ctrl.z80 here.
 ;---
