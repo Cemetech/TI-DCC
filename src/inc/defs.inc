@@ -88,4 +88,4 @@ HELPBANK .equ 4
 .define XLC_SEGGREEN $66
 .define XLC_SEGAMBER $E5
 
-
+.define DC_MODE_SPEED_STEPS_MAX 127+1

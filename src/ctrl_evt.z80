@@ -1,14 +1,14 @@
 ;---
 _evl_fnbanks:
+	ld hl,enableDCmode
+	inc (hl)
+	dec (hl)
 	jp nz,_evloop_keywait_and_jumpback
 	ld a,c
 	dec e
 	jr nz,_evl_fnbanks_doconfig
 _evl_fnbanks_docontroller:
 	ld (curbank),a
-	ld a,(enableDCmode)
-	or a
-	jp nz,_evloop_keywait_and_jumpback
 	call UpdateKeyLabels
 	call UpdateSwitchState
 	call UpdateSwitchLock
@@ -74,6 +74,11 @@ _evl_tracekey_doconfig:
 	ld a,(enableDCmode)
 	xor 1
 	ld (enableDCmode),a
+	push af
+		jr z,{+}
+		ld a,3
++:		ld (throttlemode),a
+	pop af
 	ld hl,{+}
 	push hl
 	ld hl,(e_dcmode)
@@ -308,7 +313,7 @@ _evl_nptable:
 .db sk9,sk8,sk7,sk6,sk5,sk4,sk3,sk2,sk1,sk0,$FF
 
 _evl_throttlemaxtable:
-.db 14,28,127
+.db 14,28,127,DC_MODE_SPEED_STEPS_MAX
 
 _evl_call_npevent:
 	ld hl,(e_numpad)
