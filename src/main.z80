@@ -15,7 +15,7 @@
 .db	80h, 48h, "TI-DCC  "   ;name of the app
 .db	80h, 90h
 .db	80h, 81h, 1
-.db	80h, 12h, 1, 15 ; or 15 for the TI-84+CSE
+.db	80h, 12h, 1, 15        ;04h for 83+, 15h for 84+CSE
 .db	03h, 22h, 09h, 00h
 .db	02h, 00h
 .db	80h, 70h
