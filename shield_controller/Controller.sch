@@ -1,38 +1,6 @@
-EESchema Schematic File Version 2
-LIBS:Controller-rescue
-LIBS:power
-LIBS:device
-LIBS:transistors
-LIBS:conn
-LIBS:linear
-LIBS:regul
-LIBS:74xx
-LIBS:cmos4000
-LIBS:adc-dac
-LIBS:memory
-LIBS:xilinx
-LIBS:microcontrollers
-LIBS:dsp
-LIBS:microchip
-LIBS:analog_switches
-LIBS:motorola
-LIBS:texas
-LIBS:intel
-LIBS:audio
-LIBS:interface
-LIBS:digital-audio
-LIBS:philips
-LIBS:display
-LIBS:cypress
-LIBS:siliconi
-LIBS:opto
-LIBS:atmel
-LIBS:contrib
-LIBS:valves
-LIBS:LMD18200T
-LIBS:freetronics_schematic
+EESchema Schematic File Version 4
 LIBS:Controller-cache
-EELAYER 25 0
+EELAYER 26 0
 EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
@@ -47,7 +15,7 @@ Comment3 "Based off of MiniDCC LMD18200 Booster"
 Comment4 ""
 $EndDescr
 $Comp
-L LMD18200T U2
+L LMD18200T:LMD18200T U2
 U 1 1 598F37E3
 P 5900 4000
 F 0 "U2" H 5691 4539 50  0000 L BNN
@@ -63,7 +31,7 @@ F 8 "TO-220 Texas Instruments" H 5900 4000 50  0001 L BNN "Package"
 	1    0    0    -1  
 $EndComp
 $Comp
-L C C1
+L device:C C1
 U 1 1 598F399B
 P 4200 3700
 F 0 "C1" H 4225 3800 50  0000 L CNN
@@ -74,7 +42,7 @@ F 3 "" H 4200 3700 50  0001 C CNN
 	0    1    1    0   
 $EndComp
 $Comp
-L C C2
+L device:C C2
 U 1 1 598F39E1
 P 4200 4200
 F 0 "C2" H 4225 4300 50  0000 L CNN
@@ -93,7 +61,7 @@ Track1
 Text Label 7200 4000 0    60   ~ 0
 Track2
 $Comp
-L R R2
+L device:R R2
 U 1 1 598F3B8D
 P 8200 4200
 F 0 "R2" V 8280 4200 50  0000 C CNN
@@ -104,7 +72,7 @@ F 3 "" H 8200 4200 50  0001 C CNN
 	0    1    1    0   
 $EndComp
 $Comp
-L LED-RESCUE-Controller D1
+L Controller-rescue:LED-RESCUE-Controller D1
 U 1 1 598F3BD0
 P 8650 4200
 F 0 "D1" H 8650 4300 50  0000 C CNN
@@ -115,7 +83,7 @@ F 3 "" H 8650 4200 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L +5V #PWR01
+L power:+5V #PWR01
 U 1 1 598FAED1
 P 4500 4100
 F 0 "#PWR01" H 4500 3950 50  0001 C CNN
@@ -126,7 +94,7 @@ F 3 "" H 4500 4100 50  0001 C CNN
 	0    -1   -1   0   
 $EndComp
 $Comp
-L GND #PWR02
+L power:GND #PWR02
 U 1 1 598FAFBF
 P 4450 4850
 F 0 "#PWR02" H 4450 4600 50  0001 C CNN
@@ -137,7 +105,7 @@ F 3 "" H 4450 4850 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L +12V #PWR03
+L power:+12V #PWR03
 U 1 1 598FAFEF
 P 4350 4500
 F 0 "#PWR03" H 4350 4350 50  0001 C CNN
@@ -148,7 +116,7 @@ F 3 "" H 4350 4500 50  0001 C CNN
 	0    -1   -1   0   
 $EndComp
 $Comp
-L R R1
+L device:R R1
 U 1 1 598FCAFD
 P 7850 4600
 F 0 "R1" V 7930 4600 50  0000 C CNN
@@ -159,7 +127,7 @@ F 3 "" H 7850 4600 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR04
+L power:GND #PWR04
 U 1 1 598FCB20
 P 7850 4750
 F 0 "#PWR04" H 7850 4500 50  0001 C CNN
@@ -170,7 +138,7 @@ F 3 "" H 7850 4750 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L LM7805_TO220 U1
+L regul:LM7805_TO220 U1
 U 1 1 5A2D8024
 P 2350 800
 F 0 "U1" H 2350 1042 50  0000 C CNN
@@ -181,7 +149,7 @@ F 3 "http://www.fairchildsemi.com/ds/LM/LM7805.pdf" H 2350 750 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR05
+L power:GND #PWR05
 U 1 1 5A2D8293
 P 1100 1000
 F 0 "#PWR05" H 1100 750 50  0001 C CNN
@@ -192,7 +160,7 @@ F 3 "" H 1100 1000 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L +12V #PWR06
+L power:+12V #PWR06
 U 1 1 5A2D8302
 P 750 850
 F 0 "#PWR06" H 750 700 50  0001 C CNN
@@ -203,7 +171,7 @@ F 3 "" H 750 850 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L +5V #PWR07
+L power:+5V #PWR07
 U 1 1 5A2D86C1
 P 2800 800
 F 0 "#PWR07" H 2800 650 50  0001 C CNN
@@ -214,7 +182,7 @@ F 3 "" H 2800 800 50  0001 C CNN
 	0    1    1    0   
 $EndComp
 $Comp
-L GND #PWR08
+L power:GND #PWR08
 U 1 1 5A2D872D
 P 2350 1150
 F 0 "#PWR08" H 2350 900 50  0001 C CNN
@@ -225,7 +193,7 @@ F 3 "" H 2350 1150 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L +12V #PWR09
+L power:+12V #PWR09
 U 1 1 5A2D87AB
 P 1750 800
 F 0 "#PWR09" H 1750 650 50  0001 C CNN
@@ -236,7 +204,7 @@ F 3 "" H 1750 800 50  0001 C CNN
 	0    -1   -1   0   
 $EndComp
 $Comp
-L +5V #PWR010
+L power:+5V #PWR010
 U 1 1 5A2D88F2
 P 8950 4050
 F 0 "#PWR010" H 8950 3900 50  0001 C CNN
@@ -247,7 +215,7 @@ F 3 "" H 8950 4050 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L PWR_FLAG #FLG011
+L power:PWR_FLAG #FLG011
 U 1 1 5A2D8DEB
 P 1100 850
 F 0 "#FLG011" H 1100 925 50  0001 C CNN
@@ -258,7 +226,7 @@ F 3 "" H 1100 850 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L PWR_FLAG #FLG012
+L power:PWR_FLAG #FLG012
 U 1 1 5A2D8E62
 P 750 1000
 F 0 "#FLG012" H 750 1075 50  0001 C CNN
@@ -273,7 +241,7 @@ Direction
 Text Label 7850 4300 2    60   ~ 0
 Current_Sense
 $Comp
-L CONN_01X02 J3
+L conn:CONN_01X02 J3
 U 1 1 5A2D9689
 P 5650 1200
 F 0 "J3" H 5727 1241 50  0000 L CNN
@@ -284,7 +252,7 @@ F 3 "" H 5650 1200 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L CONN_01X02 J2
+L conn:CONN_01X02 J2
 U 1 1 5A2D970D
 P 5650 850
 F 0 "J2" H 5727 891 50  0000 L CNN
@@ -311,7 +279,7 @@ Board Connectors
 Text Notes 6700 5500 0    60   ~ 0
 LMD18200 Booster
 $Comp
-L C C3
+L device:C C3
 U 1 1 5A2DBB14
 P 2800 1000
 F 0 "C3" H 2915 1046 50  0000 L CNN
@@ -322,7 +290,7 @@ F 3 "" H 2800 1000 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L CP1_Small C4
+L device:CP1_Small C4
 U 1 1 5A2DC31F
 P 1750 1000
 F 0 "C4" H 1600 1100 50  0000 L CNN
@@ -333,7 +301,7 @@ F 3 "" H 1750 1000 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L C_Small C5
+L device:C_Small C5
 U 1 1 5A2DC812
 P 1950 1000
 F 0 "C5" H 1950 1100 50  0000 L CNN
@@ -344,7 +312,7 @@ F 3 "" H 1950 1000 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L ARDUINO_SHIELD SHIELD1
+L freetronics_schematic:ARDUINO_SHIELD SHIELD1
 U 1 1 5A36AE4F
 P 8950 2250
 F 0 "SHIELD1" H 8500 3400 60  0000 C CNN
@@ -355,7 +323,7 @@ F 3 "" H 8950 2250 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L +5V #PWR013
+L power:+5V #PWR013
 U 1 1 5A36B050
 P 7850 2050
 F 0 "#PWR013" H 7850 1900 50  0001 C CNN
@@ -366,7 +334,7 @@ F 3 "" H 7850 2050 50  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR014
+L power:GND #PWR014
 U 1 1 5A3AA9D3
 P 7850 2250
 F 0 "#PWR014" H 7850 2000 50  0001 C CNN
@@ -377,7 +345,7 @@ F 3 "" H 7850 2250 50  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L CONN_01X04 J1
+L conn:CONN_01X04 J1
 U 1 1 5A3AAB54
 P 7250 1000
 F 0 "J1" H 7250 1250 50  0000 C CNN
@@ -388,7 +356,7 @@ F 3 "" H 7250 1000 50  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR015
+L power:GND #PWR015
 U 1 1 5A3AB12C
 P 6700 950
 F 0 "#PWR015" H 6700 700 50  0001 C CNN
@@ -399,7 +367,7 @@ F 3 "" H 6700 950 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L +5V #PWR016
+L power:+5V #PWR016
 U 1 1 5A3AB20D
 P 7000 800
 F 0 "#PWR016" H 7000 650 50  0001 C CNN
@@ -410,7 +378,7 @@ F 3 "" H 7000 800 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L +12V #PWR017
+L power:+12V #PWR017
 U 1 1 5A3AB28D
 P 6900 1200
 F 0 "#PWR017" H 6900 1050 50  0001 C CNN
@@ -421,7 +389,7 @@ F 3 "" H 6900 1200 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L CONN_01X03 J4
+L conn:CONN_01X03 J4
 U 1 1 5A3AB9AB
 P 4400 950
 F 0 "J4" H 4400 1150 50  0000 C CNN
@@ -436,7 +404,7 @@ CalcWhite
 Text Label 3750 950  0    60   ~ 0
 CalcRed
 $Comp
-L GND #PWR018
+L power:GND #PWR018
 U 1 1 5A3ABD28
 P 3600 850
 F 0 "#PWR018" H 3600 600 50  0001 C CNN
@@ -487,7 +455,7 @@ Wire Wire Line
 Wire Wire Line
 	2800 800  2650 800 
 Wire Wire Line
-	1750 800  2050 800 
+	1750 800  1950 800 
 Wire Wire Line
 	8950 4200 8800 4200
 Wire Wire Line
@@ -521,7 +489,7 @@ Wire Notes Line
 Wire Notes Line
 	3450 1400 3450 500 
 Wire Wire Line
-	1750 1150 2800 1150
+	1750 1150 1950 1150
 Wire Wire Line
 	2800 800  2800 850 
 Wire Wire Line
@@ -558,7 +526,7 @@ Wire Wire Line
 Wire Wire Line
 	10400 2850 9900 2850
 $Comp
-L R R3
+L device:R R3
 U 1 1 5A3ACE97
 P 10250 2300
 F 0 "R3" V 10330 2300 50  0000 C CNN
@@ -573,7 +541,7 @@ Brake
 Wire Wire Line
 	4450 4000 4600 4000
 $Comp
-L GND #PWR019
+L power:GND #PWR019
 U 1 1 5A3AD62E
 P 10250 2450
 F 0 "#PWR019" H 10250 2200 50  0001 C CNN
@@ -586,10 +554,176 @@ $EndComp
 Text Label 10600 2150 2    60   ~ 0
 Brake
 Wire Wire Line
-	9900 2150 10600 2150
+	9900 2150 10250 2150
 Connection ~ 10250 2150
 Text Label 10600 2050 2    60   ~ 0
 Direction
 Wire Wire Line
 	10600 2050 9900 2050
+$Comp
+L power:GND #PWR020
+U 1 1 5A3B13C8
+P 10200 1550
+F 0 "#PWR020" H 10200 1300 50  0001 C CNN
+F 1 "GND" H 10200 1400 50  0000 C CNN
+F 2 "" H 10200 1550 50  0000 C CNN
+F 3 "" H 10200 1550 50  0000 C CNN
+	1    10200 1550
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	9900 1550 10200 1550
+Text Label 7300 2550 0    60   ~ 0
+Current_Sense
+Wire Wire Line
+	7300 2550 8000 2550
+$Comp
+L conn:CONN_01X02 J5
+U 1 1 5A3C2F33
+P 4400 1250
+F 0 "J5" H 4477 1291 50  0000 L CNN
+F 1 "EBrake" H 4477 1200 50  0000 L CNN
+F 2 "Pin_Headers:Pin_Header_Straight_1x02_Pitch2.54mm" H 4400 1250 50  0001 C CNN
+F 3 "" H 4400 1250 50  0001 C CNN
+	1    4400 1250
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR021
+U 1 1 5A3C2FF0
+P 4050 1300
+F 0 "#PWR021" H 4050 1050 50  0001 C CNN
+F 1 "GND" H 4055 1127 50  0000 C CNN
+F 2 "" H 4050 1300 50  0001 C CNN
+F 3 "" H 4050 1300 50  0001 C CNN
+	1    4050 1300
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4050 1300 4200 1300
+Text Label 4150 1200 2    60   ~ 0
+Brake
+Wire Wire Line
+	4200 1200 4150 1200
+$Comp
+L conn:CONN_01X01 PP1
+U 1 1 5A3C362B
+P 1500 1700
+F 0 "PP1" H 1500 1800 50  0000 C CNN
+F 1 "CR" H 1600 1700 50  0000 C CNN
+F 2 "Wire_Pads:SolderWirePad_single_0-8mmDrill" H 1500 1700 50  0001 C CNN
+F 3 "" H 1500 1700 50  0000 C CNN
+	1    1500 1700
+	1    0    0    -1  
+$EndComp
+$Comp
+L conn:CONN_01X01 PP2
+U 1 1 5A3C3A52
+P 1500 1900
+F 0 "PP2" H 1500 2000 50  0000 C CNN
+F 1 "CW" H 1600 1900 50  0000 C CNN
+F 2 "Wire_Pads:SolderWirePad_single_0-8mmDrill" H 1500 1900 50  0001 C CNN
+F 3 "" H 1500 1900 50  0000 C CNN
+	1    1500 1900
+	1    0    0    -1  
+$EndComp
+$Comp
+L conn:CONN_01X01 PP3
+U 1 1 5A3C3AB3
+P 1500 2100
+F 0 "PP3" H 1500 2200 50  0000 C CNN
+F 1 "DIR" H 1600 2100 50  0000 C CNN
+F 2 "Wire_Pads:SolderWirePad_single_0-8mmDrill" H 1500 2100 50  0001 C CNN
+F 3 "" H 1500 2100 50  0000 C CNN
+	1    1500 2100
+	1    0    0    -1  
+$EndComp
+$Comp
+L conn:CONN_01X01 PP4
+U 1 1 5A3C3B07
+P 1500 2300
+F 0 "PP4" H 1500 2400 50  0000 C CNN
+F 1 "CS" H 1600 2300 50  0000 C CNN
+F 2 "Wire_Pads:SolderWirePad_single_0-8mmDrill" H 1500 2300 50  0001 C CNN
+F 3 "" H 1500 2300 50  0000 C CNN
+	1    1500 2300
+	1    0    0    -1  
+$EndComp
+$Comp
+L conn:CONN_01X01 PP6
+U 1 1 5A3C3C32
+P 1500 2700
+F 0 "PP6" H 1500 2800 50  0000 C CNN
+F 1 "GND" H 1600 2700 50  0000 C CNN
+F 2 "Wire_Pads:SolderWirePad_single_0-8mmDrill" H 1500 2700 50  0001 C CNN
+F 3 "" H 1500 2700 50  0000 C CNN
+	1    1500 2700
+	1    0    0    -1  
+$EndComp
+Text Label 850  1700 0    60   ~ 0
+CalcRed
+Text Label 850  1900 0    60   ~ 0
+CalcWhite
+Text Label 850  2100 0    60   ~ 0
+Direction
+Text Label 700  2300 0    60   ~ 0
+Current_Sense
+$Comp
+L power:GND #PWR022
+U 1 1 5A3C3DDC
+P 1050 2700
+F 0 "#PWR022" H 1050 2450 50  0001 C CNN
+F 1 "GND" H 1055 2527 50  0000 C CNN
+F 2 "" H 1050 2700 50  0001 C CNN
+F 3 "" H 1050 2700 50  0001 C CNN
+	1    1050 2700
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1050 2700 1300 2700
+Wire Wire Line
+	1300 2300 700  2300
+Wire Wire Line
+	850  2100 1300 2100
+Wire Wire Line
+	850  1900 1300 1900
+Wire Wire Line
+	850  1700 1300 1700
+Text Notes 1700 3000 2    60   ~ 0
+Prototyping Breakout Area
+$Comp
+L conn:CONN_01X01 PP5
+U 1 1 5A3C44AB
+P 1500 2500
+F 0 "PP5" H 1500 2600 50  0000 C CNN
+F 1 "+5V" H 1600 2500 50  0000 C CNN
+F 2 "Wire_Pads:SolderWirePad_single_0-8mmDrill" H 1500 2500 50  0001 C CNN
+F 3 "" H 1500 2500 50  0000 C CNN
+	1    1500 2500
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:+5V #PWR023
+U 1 1 5A3C459A
+P 1050 2550
+F 0 "#PWR023" H 1050 2400 50  0001 C CNN
+F 1 "+5V" H 1065 2723 50  0000 C CNN
+F 2 "" H 1050 2550 50  0001 C CNN
+F 3 "" H 1050 2550 50  0001 C CNN
+	1    1050 2550
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1050 2550 1300 2550
+Wire Wire Line
+	1300 2550 1300 2500
+Wire Wire Line
+	2350 1150 2800 1150
+Wire Wire Line
+	1950 800  2050 800 
+Wire Wire Line
+	1950 1150 2350 1150
+Wire Wire Line
+	10250 2150 10600 2150
+NoConn ~ 6150 3500
 $EndSCHEMATC

@@ -1,4 +1,4 @@
-update=12/16/2017 1:59:11 PM
+update=12/25/2017 6:09:51 PM
 version=1
 last_client=kicad
 [pcbnew]
@@ -37,37 +37,4 @@ LabSize=60
 ERC_TestSimilarLabels=1
 [eeschema]
 version=1
-LibDir=../freetronics_kicad_library-master
-[eeschema/libraries]
-LibName1=Controller-rescue
-LibName2=power
-LibName3=device
-LibName4=transistors
-LibName5=conn
-LibName6=linear
-LibName7=regul
-LibName8=74xx
-LibName9=cmos4000
-LibName10=adc-dac
-LibName11=memory
-LibName12=xilinx
-LibName13=microcontrollers
-LibName14=dsp
-LibName15=microchip
-LibName16=analog_switches
-LibName17=motorola
-LibName18=texas
-LibName19=intel
-LibName20=audio
-LibName21=interface
-LibName22=digital-audio
-LibName23=philips
-LibName24=display
-LibName25=cypress
-LibName26=siliconi
-LibName27=opto
-LibName28=atmel
-LibName29=contrib
-LibName30=valves
-LibName31=C:/Program Files/KiCad/share/kicad/library/LMD18200T
-LibName32=freetronics_schematic
+LibDir=
