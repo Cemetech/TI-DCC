@@ -1,5 +1,9 @@
 ;---
 _evl_fnbanks:
+	ld hl,enableDCmode
+	inc (hl)
+	dec (hl)
+	jp nz,_evloop_keywait_and_jumpback
 	ld a,c
 	dec e
 	jr nz,_evl_fnbanks_doconfig
@@ -19,6 +23,9 @@ _evl_graphkey:
 	dec e
 	jr nz,_evl_graphkey_doconfig
 _evl_graphkey_docontroller:
+	ld a,(enableDCmode)
+	or a
+	jp nz,_evloop_keywait_and_jumpback
 	ld a,(tabflags)
 	xor %00010000
 	ld (tabflags),a
@@ -67,10 +74,23 @@ _evl_tracekey_doconfig:
 	ld a,(enableDCmode)
 	xor 1
 	ld (enableDCmode),a
-	call UpdateTabs2
+	push af
+		jr z,{+}
+		ld a,3
++:		ld (throttlemode),a
+	pop af
+	ld hl,{+}
+	push hl
+	ld hl,(e_dcmode)
+	jp (hl)
++:	call UpdateTabs2
 	jp _evloop_keywait_and_jumpback
 ;---
 _evl_numpad:
+	ld hl,enableDCmode
+	inc (hl)
+	dec (hl)  ;NZ if enabled. If it's enabled, quit now (do not process numkeys)
+	jp nz,_evloop_keywait_and_jumpback
 	dec e
 	jr nz,_evl_numpad_doconfig
 _evl_numpad_docontroller:
@@ -293,7 +313,7 @@ _evl_nptable:
 .db sk9,sk8,sk7,sk6,sk5,sk4,sk3,sk2,sk1,sk0,$FF
 
 _evl_throttlemaxtable:
-.db 14,28,127
+.db 14,28,127,DC_MODE_SPEED_STEPS_MAX
 
 _evl_call_npevent:
 	ld hl,(e_numpad)

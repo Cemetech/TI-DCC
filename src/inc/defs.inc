@@ -53,6 +53,7 @@ allocMem(2,e_updown)
 allocMem(2,e_leftright)
 allocMem(2,e_cfgack)
 allocMem(2,e_estop)
+allocMem(2,e_dcmode)
 ;---
 ;insert any new events for ctrl.z80 here.
 ;---
@@ -84,7 +85,7 @@ HELPBANK .equ 4
 .define XLC_WHITE $FF
 .define XLC_SEGBLUE $17
 .define XLC_SEGRED $E1
-.define XLC_SEGGREEN $66
-.define XLC_SEGAMBER $E5
+.define XLC_SEGGREEN $67
+.define XLC_SEGAMBER $E4
 
-
+.define DC_MODE_SPEED_STEPS_MAX 127+1
