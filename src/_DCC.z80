@@ -62,8 +62,10 @@ WAITCOUNT = 6
 .var dccStateStruct, dccstate
 .var dccPacketStruct, dccIdlePacket
 .var dccPacketStruct, dccUserPacket
+.var zeroHOLD
 .endlocal
 
+.var 2,activeinterrupt
 .var 10,packetGenScratch
 .var 1,maxbits
 .var 1,func
@@ -106,7 +108,11 @@ SetUpInterrupt:
     out (pCrstlTmr1Cfg),a
     ld a,218                ; Set loop period for ~58us at 15MHz to Port $32
     out (pCrstlTmr1Count),a
+    
+    ld hl,InterruptServiceRoutine
+    ld (activeinterrupt),hl
     im 2
+    
     
     ld de,BitMask_LookupTables
     call generateLUT             ;set up lut for interrupts
@@ -236,6 +242,67 @@ doWait:
     ei
     ret
     
+DcInterruptEnter:
+jp DCModeInt
+DCModeInt:
+    ex af,af'               ;'
+        exx
+            ld bc,(%00000011 << 8)+pCrstlTmr1Cfg ;
+            out (c),b                ;17cc Faster then PushPop
+            
+            ;PWM CODE HERE
+        exx
+    ex af,af' ;'
+    ei
+    
+handleDC:
+ di
+ or a
+ jp z,_disableDCmode
+ ld hl,handleDCThrottle
+ ld (e_updown),hl ;leftright
+ ld hl,doNothing
+ ld (e_leftright),hl ;leftright press event for accel/decel
+ 
+ ld  hl, DcInterruptEnter
+ ld  de, IsrLocation*256+IsrLocation
+ ld  bc, 3
+ ldir
+ 
+ jp _handleDCEnd
+ 
+_disableDCMode:
+ ld hl,dcc.handleReverser
+ ld (e_leftright),hl   ;updown press event for forward/reverse
+ 
+ ld hl,dcc.handleThrottle
+ ld (e_updown),hl ;leftright press event for accel/decel
+ 
+ 
+ ld  hl, InterruptServiceRoutineEnter
+ ld  de, IsrLocation*256+IsrLocation
+ ld  bc, 3
+ ldir
+ 
+_handleDCEnd:
+ ei
+ ret
+ 
+ 
+handleDCThrottle:
+ .endasm
+    Need to setup a new interrupt handler and switch over to it. New interrupt handler just does PWM over the io based on a duty cycle nothign absurd. 
+    keeps ~52ms period time of normal interrupt, For sanity
+    Math here
+ .asm
+ rrca
+ or e
+ ld (dcspeed),a
+ 
+ ret
+
+
+
 ;Takes CFG information and sets up the interrupt
 handleCFG:
     di
@@ -266,6 +333,7 @@ handleEStop:
     ex af,af' ;'
     ld a,(dccState.flags)
     and %11111000
+    set 2,a
     ld (dccState.flags),a    ;Zero wait
     xor a
     ld (dccState.flags),a

@@ -74,7 +74,7 @@ startApp:
 	ld hl,dcc.handleEStop
 	ld (e_estop),hl     ;when user pushes Enter to trigger eStop
 	
-	ld hl,doNothing
+	ld hl,dcc.handleDC
 	ld (e_dcmode),hl    ;when user toggles the DC mode option in config
 	
 	call DCC.init       ;setup interrupt handler
