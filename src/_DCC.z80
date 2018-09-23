@@ -62,7 +62,7 @@ WAITCOUNT = 6
 .var dccStateStruct, dccstate
 .var dccPacketStruct, dccIdlePacket
 .var dccPacketStruct, dccUserPacket
-.var zeroHOLD
+;.var zeroHOLD
 .endlocal
 
 .var 2,activeinterrupt
@@ -243,7 +243,7 @@ doWait:
     ret
     
 DcInterruptEnter:
-jp DCModeInt
+ jp DCModeInt
 DCModeInt:
     ex af,af'               ;'
         exx
@@ -297,7 +297,7 @@ handleDCThrottle:
  .asm
  rrca
  or e
- ld (dcspeed),a
+ ;ld (dcspeed),a
  
  ret
 
